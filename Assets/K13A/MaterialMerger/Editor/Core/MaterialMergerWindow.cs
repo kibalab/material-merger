@@ -31,7 +31,7 @@ namespace K13A.MaterialMerger.Editor.Core
         private GlobalSettingsPanelRenderer globalPanel;
         private GroupListRenderer groupList;
 
-        [MenuItem("Kiba/렌더링/멀티 아틀라스 머저 (New)")]
+        [MenuItem("Kiba/렌더링/멀티 아틀라스 머저")]
         static void Open() => GetWindow<MaterialMergerWindow>("멀티 아틀라스 머저");
 
         void OnEnable()
@@ -144,6 +144,7 @@ namespace K13A.MaterialMerger.Editor.Core
         private void OnBuildWithConfirm()
         {
             buildService.BuildAndApplyWithConfirm(
+                this,
                 state.root,
                 state.scans,
                 state.diffPolicy,

@@ -17,6 +17,7 @@ namespace K13A.MaterialMerger.Editor.Services
         public IMaterialScanService ScanService { get; set; }
 
         public void BuildAndApplyWithConfirm(
+            dynamic owner,
             GameObject root,
             List<GroupScan> scans,
             DiffPolicy diffPolicy,
@@ -83,7 +84,7 @@ namespace K13A.MaterialMerger.Editor.Services
                 return;
             }
 
-            ConfirmWindow.Open(null, list);
+            ConfirmWindow.Open(owner, list);
         }
 
         public void BuildAndApply(

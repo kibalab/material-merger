@@ -57,8 +57,9 @@ namespace K13A.MaterialMerger.Editor
         [NonSerialized] bool stylesReady;
         [NonSerialized] bool lastProSkin;
 
-        [MenuItem("Kiba/렌더링/멀티 아틀라스 머저")]
-        static void Open() => GetWindow<MaterialMerger>("멀티 아틀라스 머저");
+        // DEPRECATED: SOLID 리팩토링된 MaterialMergerWindow를 사용하세요
+        // [MenuItem("Kiba/렌더링/멀티 아틀라스 머저 (Old)")]
+        // static void Open() => GetWindow<MaterialMerger>("멀티 아틀라스 머저");
 
         [MenuItem("Kiba/렌더링/멀티 아틀라스 롤백...")]
         static void RollbackMenu()

@@ -11,6 +11,7 @@ namespace K13A.MaterialMerger.Editor.Services
         /// 빌드 확인 창 표시
         /// </summary>
         void BuildAndApplyWithConfirm(
+            dynamic owner,
             GameObject root,
             List<GroupScan> scans,
             DiffPolicy diffPolicy,

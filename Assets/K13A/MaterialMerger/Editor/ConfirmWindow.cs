@@ -19,11 +19,11 @@ namespace K13A.MaterialMerger.Editor
             public List<string> generatedProps = new List<string>();
         }
 
-        MaterialMerger owner;
+        dynamic owner;
         List<GroupInfo> groups;
         Vector2 scroll;
 
-        public static void Open(MaterialMerger owner, List<GroupInfo> groups)
+        public static void Open(dynamic owner, List<GroupInfo> groups)
         {
             var w = CreateInstance<ConfirmWindow>();
             w.owner = owner;
