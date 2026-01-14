@@ -132,10 +132,10 @@ namespace K13A.MaterialMerger.Editor.Services
 
             var applyScans = ScanService.ScanGameObject(
                 applyRootObj,
-                grid,
                 groupByKeywords,
                 groupByRenderQueue,
-                splitOpaqueTransparent
+                splitOpaqueTransparent,
+                grid
             );
             CopySettings(scans, applyScans);
 

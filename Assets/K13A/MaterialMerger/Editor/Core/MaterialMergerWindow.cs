@@ -125,10 +125,10 @@ namespace K13A.MaterialMerger.Editor.Core
 
             state.scans = scanService.ScanGameObject(
                 state.root,
-                state.grid,
                 state.groupByKeywords,
                 state.groupByRenderQueue,
-                state.splitOpaqueTransparent
+                state.splitOpaqueTransparent,
+                state.grid
             );
 
             state.scans = state.scans
