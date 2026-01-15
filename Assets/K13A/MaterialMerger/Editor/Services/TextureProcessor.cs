@@ -36,6 +36,14 @@ namespace K13A.MaterialMerger.Editor.Services
                 return CreateSolidPixels(width, height, Color.white);
             }
 
+            // Blit 머티리얼이 초기화되지 않은 경우 방어 코드
+            if (!blitMat)
+            {
+                Debug.LogError("BlitMaterial is not initialized. Call EnsureBlitMaterial first.");
+                if (normalLike) return CreateSolidPixels(width, height, new Color(0.5f, 0.5f, 1f, 1f));
+                return CreateSolidPixels(width, height, Color.white);
+            }
+
             blitMat.SetTexture("_MainTex", source);
             blitMat.SetVector("_ScaleOffset", st);
 

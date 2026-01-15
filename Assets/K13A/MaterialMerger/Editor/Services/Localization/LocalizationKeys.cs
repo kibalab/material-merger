@@ -35,6 +35,15 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
         public const string Policy = "global.policy";
         public const string UnresolvedDiffPolicy = "global.unresolved_diff_policy";
 
+        // Statistics
+        public const string Statistics = "stats.statistics";
+        public const string TotalMaterials = "stats.total_materials";
+        public const string UniqueMaterials = "stats.unique_materials";
+        public const string MergableGroups = "stats.mergable_groups";
+        public const string BeforeMerge = "stats.before_merge";
+        public const string AfterMerge = "stats.after_merge";
+        public const string TotalRenderers = "stats.total_renderers";
+
         // Group List
         public const string PlanList = "grouplist.plan_list";
         public const string ExpandAll = "grouplist.expand_all";
@@ -48,6 +57,7 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
         public const string Material = "group.material";
         public const string Page = "group.page";
         public const string Skip = "group.skip";
+        public const string SingleMaterial = "group.single_material";
         public const string RelevantOnly = "group.relevant_only";
         public const string TexturesOnly = "group.textures_only";
         public const string ScalarsOnly = "group.scalars_only";

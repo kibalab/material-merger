@@ -51,6 +51,15 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 [L10nKey.Policy] = "정책",
                 [L10nKey.UnresolvedDiffPolicy] = "미해결 diff 처리",
 
+                // Statistics
+                [L10nKey.Statistics] = "통계",
+                [L10nKey.TotalMaterials] = "총 머티리얼",
+                [L10nKey.UniqueMaterials] = "고유 머티리얼",
+                [L10nKey.MergableGroups] = "병합 가능 그룹",
+                [L10nKey.BeforeMerge] = "병합 전",
+                [L10nKey.AfterMerge] = "병합 후",
+                [L10nKey.TotalRenderers] = "총 렌더러",
+
                 // Group List
                 [L10nKey.PlanList] = "계획 목록",
                 [L10nKey.ExpandAll] = "전체 펼치기",
@@ -63,6 +72,7 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 [L10nKey.Material] = "머티리얼",
                 [L10nKey.Page] = "페이지",
                 [L10nKey.Skip] = "스킵",
+                [L10nKey.SingleMaterial] = "단일(병합불필요)",
                 [L10nKey.RelevantOnly] = "관련만",
                 [L10nKey.TexturesOnly] = "텍스처만",
                 [L10nKey.ScalarsOnly] = "스칼라만",
@@ -192,6 +202,15 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 [L10nKey.Policy] = "Policy",
                 [L10nKey.UnresolvedDiffPolicy] = "Unresolved Diff Policy",
 
+                // Statistics
+                [L10nKey.Statistics] = "Statistics",
+                [L10nKey.TotalMaterials] = "Total Materials",
+                [L10nKey.UniqueMaterials] = "Unique Materials",
+                [L10nKey.MergableGroups] = "Mergable Groups",
+                [L10nKey.BeforeMerge] = "Before Merge",
+                [L10nKey.AfterMerge] = "After Merge",
+                [L10nKey.TotalRenderers] = "Total Renderers",
+
                 // Group List
                 [L10nKey.PlanList] = "Plan List",
                 [L10nKey.ExpandAll] = "Expand All",
@@ -204,6 +223,7 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 [L10nKey.Material] = "Material",
                 [L10nKey.Page] = "Page",
                 [L10nKey.Skip] = "Skip",
+                [L10nKey.SingleMaterial] = "Single(No merge needed)",
                 [L10nKey.RelevantOnly] = "Relevant",
                 [L10nKey.TexturesOnly] = "Textures",
                 [L10nKey.ScalarsOnly] = "Scalars",
@@ -333,6 +353,15 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 [L10nKey.Policy] = "ポリシー",
                 [L10nKey.UnresolvedDiffPolicy] = "未解決diff処理",
 
+                // Statistics
+                [L10nKey.Statistics] = "統計",
+                [L10nKey.TotalMaterials] = "総マテリアル",
+                [L10nKey.UniqueMaterials] = "固有マテリアル",
+                [L10nKey.MergableGroups] = "マージ可能グループ",
+                [L10nKey.BeforeMerge] = "マージ前",
+                [L10nKey.AfterMerge] = "マージ後",
+                [L10nKey.TotalRenderers] = "総レンダラー",
+
                 // Group List
                 [L10nKey.PlanList] = "プラン一覧",
                 [L10nKey.ExpandAll] = "すべて展開",
@@ -345,6 +374,7 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 [L10nKey.Material] = "マテリアル",
                 [L10nKey.Page] = "ページ",
                 [L10nKey.Skip] = "スキップ",
+                [L10nKey.SingleMaterial] = "単一(マージ不要)",
                 [L10nKey.RelevantOnly] = "関連のみ",
                 [L10nKey.TexturesOnly] = "テクスチャのみ",
                 [L10nKey.ScalarsOnly] = "スカラーのみ",

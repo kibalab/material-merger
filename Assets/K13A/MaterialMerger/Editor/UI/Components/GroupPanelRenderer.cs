@@ -39,17 +39,37 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         private void DrawGroupHeader(GroupScan g)
         {
             var shaderName = Utilities.GUIUtility.GetGroupShaderName(g);
+            bool isSingleMaterial = g.mats.Count == 1;
+
             using (new EditorGUILayout.HorizontalScope())
             {
-                g.enabled = EditorGUILayout.Toggle(g.enabled, GUILayout.Width(16));
+                // 단일 머티리얼은 체크박스 비활성화 (병합할 필요 없음)
+                using (new EditorGUI.DisabledScope(isSingleMaterial))
+                {
+                    g.enabled = EditorGUILayout.Toggle(g.enabled, GUILayout.Width(16));
+                }
+
                 var foldoutContent = new GUIContent($"{shaderName}   [{g.tag}]");
                 g.foldout = EditorGUILayout.Foldout(g.foldout, foldoutContent, true);
                 GUILayout.FlexibleSpace();
 
                 Utilities.GUIUtility.DrawPill(Localization.Get(L10nKey.Material, g.mats.Count), false,
                     Styles.stPill, Styles.stPillWarn);
-                Utilities.GUIUtility.DrawPill(Localization.Get(L10nKey.Page, g.pageCount), false,
-                    Styles.stPill, Styles.stPillWarn);
+
+                // 단일 머티리얼이면 특별 표시
+                if (isSingleMaterial)
+                {
+                    var c = GUI.color;
+                    GUI.color = new Color(0.7f, 0.7f, 0.7f);
+                    Utilities.GUIUtility.DrawPill(Localization.Get(L10nKey.SingleMaterial), false,
+                        Styles.stPill, Styles.stPillWarn);
+                    GUI.color = c;
+                }
+                else
+                {
+                    Utilities.GUIUtility.DrawPill(Localization.Get(L10nKey.Page, g.pageCount), false,
+                        Styles.stPill, Styles.stPillWarn);
+                }
 
                 if (g.skippedMultiMat > 0)
                     Utilities.GUIUtility.DrawPill(Localization.Get(L10nKey.Skip, g.skippedMultiMat), true,
