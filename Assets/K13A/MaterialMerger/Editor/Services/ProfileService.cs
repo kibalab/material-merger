@@ -211,6 +211,7 @@ namespace K13A.MaterialMerger.Editor.Services
             group.skippedMultiMat = gs.skippedMultiMat;
             var defaultOutputName = string.IsNullOrEmpty(gs.outputMaterialName) ? shaderName : gs.outputMaterialName;
             group.outputMaterialName = string.IsNullOrEmpty(defaultOutputName) ? "Merged" : defaultOutputName;
+            group.mergeKey = gs.mergeKey ?? "";
 
             group.enabled = gs.enabled;
             group.foldout = gs.foldout;
@@ -352,6 +353,7 @@ namespace K13A.MaterialMerger.Editor.Services
             var shaderName = group.key.shader ? group.key.shader.name : group.shaderName;
             var defaultOutputName = string.IsNullOrEmpty(gs.outputMaterialName) ? shaderName : gs.outputMaterialName;
             group.outputMaterialName = string.IsNullOrEmpty(defaultOutputName) ? "Merged" : defaultOutputName;
+            group.mergeKey = gs.mergeKey ?? "";
 
             // Row 설정 적용
             var rowMap = gs.rows
@@ -408,6 +410,7 @@ namespace K13A.MaterialMerger.Editor.Services
             gs.pageCount = group.pageCount;
             gs.skippedMultiMat = group.skippedMultiMat;
             gs.outputMaterialName = group.outputMaterialName;
+            gs.mergeKey = group.mergeKey ?? "";
 
             gs.enabled = group.enabled;
             gs.foldout = group.foldout;

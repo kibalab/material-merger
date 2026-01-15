@@ -81,6 +81,10 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
         public const string CollapseAllTooltip = "grouplist.collapse_all_tooltip";
         public const string EnableAllTooltip = "grouplist.enable_all_tooltip";
         public const string DisableAllTooltip = "grouplist.disable_all_tooltip";
+        public const string MergeSelected = "grouplist.merge_selected";
+        public const string MergeSelectedTooltip = "grouplist.merge_selected_tooltip";
+        public const string ClearMerge = "grouplist.clear_merge";
+        public const string ClearMergeTooltip = "grouplist.clear_merge_tooltip";
 
         public const string NoScanMessage = "grouplist.no_scan_message";
 
@@ -106,6 +110,11 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
         public const string PlanMaterialsTooltip = "group.plan_materials_tooltip";
         public const string PlanMaterialsTitle = "group.plan_materials_title";
         public const string PlanMaterialsEmpty = "group.plan_materials_empty";
+        public const string PlanDragHandleTooltip = "group.plan_drag_handle_tooltip";
+        public const string MergeSelect = "group.merge_select";
+        public const string MergeSelectTooltip = "group.merge_select_tooltip";
+        public const string MergedTag = "group.merged_tag";
+        public const string MergedTagTooltip = "group.merged_tag_tooltip";
 
         // Property Table
         public const string Property = "table.property";

@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System;
 using UnityEditor;
 using UnityEngine;
 using K13A.MaterialMerger.Editor.Core;
@@ -15,39 +16,60 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         public MaterialMergerStyles Styles { get; set; }
         public PropertyTableRenderer TableRenderer { get; set; }
         public ILocalizationService Localization { get; set; }
-        private readonly System.Collections.Generic.Dictionary<GroupScan, Rect> materialsButtonRects =
-            new System.Collections.Generic.Dictionary<GroupScan, Rect>();
+        private readonly System.Collections.Generic.Dictionary<GroupKey, Rect> materialsButtonRects =
+            new System.Collections.Generic.Dictionary<GroupKey, Rect>();
 
         /// <summary>
         /// 그룹 패널 렌더링
         /// </summary>
-        public void DrawGroup(GroupScan g, int index)
+        public void DrawGroup(
+            GroupScan g,
+            int index,
+            bool isMergeChild,
+            int mergeChildCount,
+            Action<GroupScan, Rect> registerHeaderRect,
+            Action<GroupScan, Rect> registerHandleRect)
         {
             using (new EditorGUILayout.VerticalScope(Styles.stBox))
             {
-                DrawGroupHeader(g);
+                DrawGroupHeader(g, isMergeChild, mergeChildCount, registerHeaderRect, registerHandleRect);
 
-                if (!g.foldout) return;
-
-                DrawGroupToolbar(g);
-                DrawOutputNameField(g);
-                EditorGUILayout.Space(4);
-                TableRenderer.DrawTable(g);
+                if (g.foldout)
+                {
+                    using (new EditorGUI.DisabledScope(isMergeChild))
+                    {
+                        DrawGroupToolbar(g);
+                        DrawOutputNameField(g);
+                        EditorGUILayout.Space(4);
+                        TableRenderer.DrawTable(g);
+                    }
+                }
             }
         }
 
         /// <summary>
         /// 그룹 헤더 (체크박스, 폴드아웃, 이름, 통계)
         /// </summary>
-        private void DrawGroupHeader(GroupScan g)
+        private void DrawGroupHeader(
+            GroupScan g,
+            bool isMergeChild,
+            int mergeChildCount,
+            Action<GroupScan, Rect> registerHeaderRect,
+            Action<GroupScan, Rect> registerHandleRect)
         {
             var shaderName = Utilities.GUIUtility.GetGroupShaderName(g);
             bool isSingleMaterial = g.mats.Count == 1;
 
             using (new EditorGUILayout.HorizontalScope())
             {
+                var dragContent = new GUIContent("::", Localization.Get(L10nKey.PlanDragHandleTooltip));
+                GUILayout.Label(dragContent, Styles.stToolbarBtn, GUILayout.Width(18), GUILayout.Height(18));
+                var handleRect = GUILayoutUtility.GetLastRect();
+                if (Event.current.type == EventType.Repaint)
+                    registerHandleRect?.Invoke(g, handleRect);
+
                 // 단일 머티리얼은 체크박스 비활성화 (병합할 필요 없음)
-                using (new EditorGUI.DisabledScope(isSingleMaterial))
+                using (new EditorGUI.DisabledScope(isSingleMaterial || isMergeChild))
                 {
                     g.enabled = EditorGUILayout.Toggle(g.enabled, GUILayout.Width(16));
                 }
@@ -83,6 +105,10 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                     Utilities.GUIUtility.DrawPill(Localization.Get(L10nKey.Skip, g.skippedMultiMat), true,
                         Styles.stPill, Styles.stPillWarn, Localization.Get(L10nKey.MultiMatTooltip));
 
+                if (mergeChildCount > 0)
+                    Utilities.GUIUtility.DrawPill(Localization.Get(L10nKey.MergedTag, mergeChildCount), false,
+                        Styles.stPill, Styles.stPillWarn, Localization.Get(L10nKey.MergedTagTooltip));
+
                 using (new EditorGUI.DisabledScope(g.mats == null || g.mats.Count == 0))
                 {
                     var materialsContent = Utilities.GUIUtility.MakeIconContent(
@@ -91,10 +117,10 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                     bool clicked = GUILayout.Button(materialsContent, Styles.stToolbarBtn, GUILayout.Width(120), GUILayout.Height(18));
                     var buttonRect = GUILayoutUtility.GetLastRect();
                     if (Event.current.type == EventType.Repaint && buttonRect.width > 0f && buttonRect.height > 0f)
-                        materialsButtonRects[g] = buttonRect;
+                        materialsButtonRects[g.key] = buttonRect;
                     if (clicked)
                     {
-                        if (!materialsButtonRects.TryGetValue(g, out var anchorRect) || anchorRect.width <= 0f)
+                        if (!materialsButtonRects.TryGetValue(g.key, out var anchorRect) || anchorRect.width <= 0f)
                         {
                             var mouse = Event.current.mousePosition;
                             anchorRect = new Rect(mouse.x, mouse.y, 1f, 1f);
@@ -102,6 +128,13 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                         MaterialGridPopup.Show(g, Localization, anchorRect);
                     }
                 }
+            }
+
+            var headerRect = GUILayoutUtility.GetLastRect();
+            if (Event.current.type == EventType.Repaint)
+            {
+                headerRect = new Rect(0f, headerRect.y, EditorGUIUtility.currentViewWidth, headerRect.height);
+                registerHeaderRect?.Invoke(g, headerRect);
             }
         }
 

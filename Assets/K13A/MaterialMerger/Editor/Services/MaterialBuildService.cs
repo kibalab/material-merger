@@ -45,9 +45,16 @@ namespace K13A.MaterialMerger.Editor.Services
                 return;
             }
 
+            var mergedScans = GroupMergeUtility.BuildMergedScans(scans, ScanService);
+            if (mergedScans.Count == 0)
+            {
+                EditorUtility.DisplayDialog(LocalizationService.Get(L10nKey.WindowTitle), LocalizationService.Get(L10nKey.DialogNoPlan), "OK");
+                return;
+            }
+
             var list = new List<ConfirmWindow.GroupInfo>();
 
-            foreach (var g in scans)
+            foreach (var g in mergedScans)
             {
                 if (!g.enabled) continue;
 
@@ -155,6 +162,7 @@ namespace K13A.MaterialMerger.Editor.Services
                 grid
             );
             CopySettings(scans, applyScans);
+            var mergedApplyScans = GroupMergeUtility.BuildMergedScans(applyScans, ScanService);
 
             int cell = atlasSize / grid;
             int content = cell - paddingPx * 2;
@@ -167,7 +175,7 @@ namespace K13A.MaterialMerger.Editor.Services
             Undo.IncrementCurrentGroup();
             int ug = Undo.GetCurrentGroup();
 
-            foreach (var g in applyScans)
+            foreach (var g in mergedApplyScans)
             {
                 if (!g.enabled) continue;
 
@@ -230,6 +238,7 @@ namespace K13A.MaterialMerger.Editor.Services
                 tg.showTexturesOnly = sg.showTexturesOnly;
                 tg.showScalarsOnly = sg.showScalarsOnly;
                 tg.outputMaterialName = string.IsNullOrEmpty(sg.outputMaterialName) ? "Merged" : sg.outputMaterialName;
+                tg.mergeKey = sg.mergeKey;
 
                 var srcRow = sg.rows
                     .Where(r => r != null && !string.IsNullOrEmpty(r.name) && r.name != "_DummyProperty")

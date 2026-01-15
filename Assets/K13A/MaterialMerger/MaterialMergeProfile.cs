@@ -56,6 +56,7 @@ namespace K13A.MaterialMerger
             public int pageCount;
             public int skippedMultiMat;
             public string outputMaterialName;
+            public string mergeKey;
 
             public bool enabled = true;
             public bool foldout = true;

@@ -14,6 +14,9 @@ namespace K13A.MaterialMerger.Editor.Models
         public int pageCount;
         public int skippedMultiMat;
         public string outputMaterialName = "";
+        public string mergeKey = "";
+        public bool mergeSelected = false;
+        public List<GroupScan> mergeChildren;
 
         public List<string> shaderTexProps = new List<string>();
         public List<string> shaderScalarProps = new List<string>();
