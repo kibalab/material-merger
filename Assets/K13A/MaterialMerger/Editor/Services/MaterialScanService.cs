@@ -83,6 +83,7 @@ namespace K13A.MaterialMerger.Editor.Services
                 var g = new GroupScan();
                 g.key = kv.Key;
                 g.shaderName = g.key.shader ? g.key.shader.name : "";
+                g.outputMaterialName = string.IsNullOrEmpty(g.shaderName) ? "Merged" : g.shaderName;
                 g.tilesPerPage = tilesPerPage;
                 g.tag = (kv.Key.transparencyKey == 1) ? "투명" : "불투명";
                 g.mats = kv.Value.Values.ToList();

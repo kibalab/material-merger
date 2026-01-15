@@ -227,6 +227,7 @@ namespace K13A.MaterialMerger.Editor.Services
                 tg.onlyRelevant = sg.onlyRelevant;
                 tg.showTexturesOnly = sg.showTexturesOnly;
                 tg.showScalarsOnly = sg.showScalarsOnly;
+                tg.outputMaterialName = string.IsNullOrEmpty(sg.outputMaterialName) ? "Merged" : sg.outputMaterialName;
 
                 var srcRow = sg.rows
                     .Where(r => r != null && !string.IsNullOrEmpty(r.name) && r.name != "_DummyProperty")
@@ -300,8 +301,8 @@ namespace K13A.MaterialMerger.Editor.Services
             string blitShaderPath = Path.Combine(outputFolder, "Hidden_KibaAtlasBlit.shader").Replace("\\", "/");
             TextureProcessor.EnsureBlitMaterial(blitShaderPath);
 
-            string shaderFolder = AtlasGenerator.SanitizeFileName(g.key.shader ? g.key.shader.name : "NullShader");
-            string groupFolder = Path.Combine(outputFolder, g.tag, shaderFolder).Replace("\\", "/");
+            string planFolder = GetPlanFolderName(g);
+            string groupFolder = Path.Combine(outputFolder, planFolder).Replace("\\", "/");
             Directory.CreateDirectory(groupFolder);
 
             var mats = g.mats.ToList();
@@ -337,7 +338,9 @@ namespace K13A.MaterialMerger.Editor.Services
                 int end = Mathf.Min(mats.Count, start + tilesPerPage);
                 var pageItems = mats.GetRange(start, end - start);
 
-                string pageFolder = Path.Combine(groupFolder, $"Page_{page:00}").Replace("\\", "/");
+                string pageFolder = g.pageCount > 1
+                    ? Path.Combine(groupFolder, $"Page_{page:00}").Replace("\\", "/")
+                    : groupFolder;
                 Directory.CreateDirectory(pageFolder);
 
                 // 페이지당 실제 머티리얼 수에 맞춰 동적 그리드 계산
@@ -522,7 +525,11 @@ namespace K13A.MaterialMerger.Editor.Services
                         merged.SetFloat(r.name, defMat.GetFloat(r.name));
                 }
 
-                string matPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(pageFolder, "Merged.mat").Replace("\\", "/"));
+                string baseName = GetOutputMaterialBaseName(g);
+                baseName = AtlasGenerator.SanitizeFileName(baseName);
+                if (string.IsNullOrEmpty(baseName)) baseName = "Merged";
+                string matFile = g.pageCount > 1 ? $"{baseName}_P{page:00}.mat" : $"{baseName}.mat";
+                string matPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(pageFolder, matFile).Replace("\\", "/"));
                 AssetDatabase.CreateAsset(merged, matPath);
                 log.createdAssetPaths.Add(matPath);
 
@@ -677,6 +684,24 @@ namespace K13A.MaterialMerger.Editor.Services
                 entry.afterMesh = afterMesh;
                 log.entries.Add(entry);
             }
+        }
+
+        private string GetPlanFolderName(GroupScan g)
+        {
+            string shaderName = g.key.shader ? g.key.shader.name : (string.IsNullOrEmpty(g.shaderName) ? "NullShader" : g.shaderName);
+            string baseName = AtlasGenerator.SanitizeFileName(shaderName);
+            string keyPart = $"RQ{g.key.renderQueue}_KW{g.key.keywordsHash}_T{g.key.transparencyKey}";
+            string combined = $"{baseName}_{keyPart}";
+            combined = AtlasGenerator.SanitizeFileName(combined);
+            return string.IsNullOrEmpty(combined) ? "Plan" : combined;
+        }
+
+        private string GetOutputMaterialBaseName(GroupScan g)
+        {
+            if (!string.IsNullOrWhiteSpace(g.outputMaterialName)) return g.outputMaterialName;
+            string shaderName = g.key.shader ? g.key.shader.name : g.shaderName;
+            if (!string.IsNullOrWhiteSpace(shaderName)) return shaderName;
+            return "Merged";
         }
 
         private Vector4 GetST(Material mat, string prop)

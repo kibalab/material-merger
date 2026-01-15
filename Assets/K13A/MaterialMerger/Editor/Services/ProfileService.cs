@@ -188,6 +188,8 @@ namespace K13A.MaterialMerger.Editor.Services
             group.tilesPerPage = gs.tilesPerPage > 0 ? gs.tilesPerPage : Mathf.Max(1, grid * grid);
             group.pageCount = gs.pageCount;
             group.skippedMultiMat = gs.skippedMultiMat;
+            var defaultOutputName = string.IsNullOrEmpty(gs.outputMaterialName) ? shaderName : gs.outputMaterialName;
+            group.outputMaterialName = string.IsNullOrEmpty(defaultOutputName) ? "Merged" : defaultOutputName;
 
             group.enabled = gs.enabled;
             group.foldout = gs.foldout;
@@ -326,6 +328,9 @@ namespace K13A.MaterialMerger.Editor.Services
             group.onlyRelevant = gs.onlyRelevant;
             group.showTexturesOnly = gs.showTexturesOnly;
             group.showScalarsOnly = gs.showScalarsOnly;
+            var shaderName = group.key.shader ? group.key.shader.name : group.shaderName;
+            var defaultOutputName = string.IsNullOrEmpty(gs.outputMaterialName) ? shaderName : gs.outputMaterialName;
+            group.outputMaterialName = string.IsNullOrEmpty(defaultOutputName) ? "Merged" : defaultOutputName;
 
             // Row 설정 적용
             var rowMap = gs.rows
@@ -381,6 +386,7 @@ namespace K13A.MaterialMerger.Editor.Services
             gs.tilesPerPage = group.tilesPerPage;
             gs.pageCount = group.pageCount;
             gs.skippedMultiMat = group.skippedMultiMat;
+            gs.outputMaterialName = group.outputMaterialName;
 
             gs.enabled = group.enabled;
             gs.foldout = group.foldout;

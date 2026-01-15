@@ -13,6 +13,7 @@ namespace K13A.MaterialMerger.Editor.Models
         public int tilesPerPage;
         public int pageCount;
         public int skippedMultiMat;
+        public string outputMaterialName = "";
 
         public List<string> shaderTexProps = new List<string>();
         public List<string> shaderScalarProps = new List<string>();

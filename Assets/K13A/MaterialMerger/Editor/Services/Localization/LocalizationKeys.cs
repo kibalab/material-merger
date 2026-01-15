@@ -63,6 +63,7 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
         public const string ScalarsOnly = "group.scalars_only";
         public const string EnableAllTextureAtlas = "group.enable_all_texture_atlas";
         public const string DisableAllTextureAtlas = "group.disable_all_texture_atlas";
+        public const string OutputMaterialName = "group.output_material_name";
 
         // Property Table
         public const string Property = "table.property";

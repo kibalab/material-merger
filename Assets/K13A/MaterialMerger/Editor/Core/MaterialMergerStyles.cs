@@ -107,6 +107,7 @@ namespace K13A.MaterialMerger.Editor.Core
 
             stToolbarBtn = new GUIStyle(EditorStyles.toolbarButton);
             stToolbarBtn.fixedHeight = 18;
+            stToolbarBtn.imagePosition = ImagePosition.ImageLeft;
 
             stRowMoreBtn = new GUIStyle(EditorStyles.miniButton);
             stRowMoreBtn.fixedHeight = 18;

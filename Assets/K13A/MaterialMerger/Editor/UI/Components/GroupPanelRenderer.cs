@@ -28,6 +28,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                 if (!g.foldout) return;
 
                 DrawGroupToolbar(g);
+                DrawOutputNameField(g);
                 EditorGUILayout.Space(4);
                 TableRenderer.DrawTable(g);
             }
@@ -50,11 +51,16 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                 }
 
                 var foldoutContent = new GUIContent($"{shaderName}   [{g.tag}]");
-                g.foldout = EditorGUILayout.Foldout(g.foldout, foldoutContent, true);
+                if (isSingleMaterial)
+                {
+                    g.foldout = false;
+                    GUILayout.Label(foldoutContent, EditorStyles.label);
+                }
+                else
+                {
+                    g.foldout = EditorGUILayout.Foldout(g.foldout, foldoutContent, true);
+                }
                 GUILayout.FlexibleSpace();
-
-                Utilities.GUIUtility.DrawPill(Localization.Get(L10nKey.Material, g.mats.Count), false,
-                    Styles.stPill, Styles.stPillWarn);
 
                 // 단일 머티리얼이면 특별 표시
                 if (isSingleMaterial)
@@ -87,12 +93,20 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             {
                 g.search = Utilities.GUIUtility.DrawSearchField(g.search, 260, lineHeight);
 
-                g.onlyRelevant = GUILayout.Toggle(g.onlyRelevant, Localization.Get(L10nKey.RelevantOnly),
-                    Styles.stToolbarBtn, GUILayout.Width(70), GUILayout.Height(lineHeight));
-                g.showTexturesOnly = GUILayout.Toggle(g.showTexturesOnly, Localization.Get(L10nKey.TexturesOnly),
-                    Styles.stToolbarBtn, GUILayout.Width(80), GUILayout.Height(lineHeight));
-                g.showScalarsOnly = GUILayout.Toggle(g.showScalarsOnly, Localization.Get(L10nKey.ScalarsOnly),
-                    Styles.stToolbarBtn, GUILayout.Width(80), GUILayout.Height(lineHeight));
+                var relevantContent = Utilities.GUIUtility.MakeIconContent(
+                    Localization.Get(L10nKey.RelevantOnly), "FilterByLabel", "d_FilterByLabel", Localization.Get(L10nKey.RelevantOnly));
+                g.onlyRelevant = GUILayout.Toggle(g.onlyRelevant, relevantContent,
+                    Styles.stToolbarBtn, GUILayout.Width(100), GUILayout.Height(lineHeight));
+
+                var texturesContent = Utilities.GUIUtility.MakeIconContent(
+                    Localization.Get(L10nKey.TexturesOnly), "Texture Icon", "d_Texture Icon", Localization.Get(L10nKey.TexturesOnly));
+                g.showTexturesOnly = GUILayout.Toggle(g.showTexturesOnly, texturesContent,
+                    Styles.stToolbarBtn, GUILayout.Width(110), GUILayout.Height(lineHeight));
+
+                var scalarsContent = Utilities.GUIUtility.MakeIconContent(
+                    Localization.Get(L10nKey.ScalarsOnly), "ScaleTool", "d_ScaleTool", Localization.Get(L10nKey.ScalarsOnly));
+                g.showScalarsOnly = GUILayout.Toggle(g.showScalarsOnly, scalarsContent,
+                    Styles.stToolbarBtn, GUILayout.Width(100), GUILayout.Height(lineHeight));
 
                 GUILayout.FlexibleSpace();
 
@@ -103,6 +117,18 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                 if (GUILayout.Button(Localization.Get(L10nKey.DisableAllTextureAtlas), Styles.stToolbarBtn,
                         GUILayout.Width(170), GUILayout.Height(lineHeight)))
                     SetAllTexActions(g, false);
+            }
+        }
+
+        private void DrawOutputNameField(GroupScan g)
+        {
+            if (string.IsNullOrEmpty(g.outputMaterialName))
+                g.outputMaterialName = Utilities.GUIUtility.GetGroupShaderName(g);
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.Label(Localization.Get(L10nKey.OutputMaterialName), EditorStyles.label, GUILayout.Width(150));
+                g.outputMaterialName = EditorGUILayout.TextField(g.outputMaterialName, GUILayout.MinWidth(140));
             }
         }
 
