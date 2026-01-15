@@ -32,6 +32,14 @@ namespace K13A.MaterialMerger.Editor.Services
             public int atlasSize;
             public int gridCols;
             public Material mergedMaterial;
+            public string materialPath;
+        }
+
+        private class GroupBuildData
+        {
+            public GroupKey groupKey;
+            public List<PageBuildInfo> pageInfos;
+            public Dictionary<Material, PageTileInfo> matToPage;
         }
 
         public void BuildAndApplyWithConfirm(
@@ -150,11 +158,94 @@ namespace K13A.MaterialMerger.Editor.Services
             LoggingService?.Info("Creating output folder", outputFolder);
             Directory.CreateDirectory(outputFolder);
 
+            string blitShaderPath = Path.Combine(outputFolder, "Hidden_KibaAtlasBlit.shader").Replace("\\", "/");
+            LoggingService?.Info("Preparing blit material", blitShaderPath);
+            TextureProcessor.EnsureBlitMaterial(blitShaderPath);
+            if (!TextureProcessor.BlitMaterial)
+            {
+                LoggingService?.Error("Blit material initialization failed", blitShaderPath, true);
+                EditorUtility.DisplayDialog(LocalizationService.Get(L10nKey.WindowTitle), LocalizationService.Get(L10nKey.DialogBlitFailed), "OK");
+                return;
+            }
+
             var log = ScriptableObject.CreateInstance<KibaMultiAtlasMergerLog>();
             string logPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(outputFolder, $"MultiAtlasLog_{DateTime.Now:yyyyMMdd_HHmmss}.asset").Replace("\\", "/"));
             AssetDatabase.CreateAsset(log, logPath);
             log.createdAssetPaths.Add(logPath);
 
+            int cell = atlasSize / grid;
+            int content = cell - paddingPx * 2;
+            if (content <= 0)
+            {
+                content = cell;
+                paddingPx = 0;
+            }
+
+            // ===== PHASE 1: Build all assets (textures and materials) in batch mode =====
+            LoggingService?.Info("═══ Phase 1: Building Assets ═══");
+            LoggingService?.Info("Starting batch asset creation (editor will remain responsive)");
+            
+            var groupBuildData = new List<GroupBuildData>();
+
+            AssetDatabase.StartAssetEditing();
+
+            try
+            {
+                var mergedScans = GroupMergeUtility.BuildMergedScans(scans, ScanService);
+                
+                int processedCount = 0;
+                int skippedCount = 0;
+
+                foreach (var g in mergedScans)
+                {
+                    if (!g.enabled)
+                    {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    bool hasUnresolved = g.rows.Any(r =>
+                        (r.type == ShaderUtil.ShaderPropertyType.Color ||
+                         r.type == ShaderUtil.ShaderPropertyType.Float ||
+                         r.type == ShaderUtil.ShaderPropertyType.Range ||
+                         r.type == ShaderUtil.ShaderPropertyType.Vector) &&
+                        r.distinctCount > 1 && !r.doAction);
+
+                    if (hasUnresolved && diffPolicy == DiffPolicy.미해결이면중단)
+                    {
+                        LoggingService?.Warning("Group skipped", $"Unresolved diff: {g.shaderName} [{g.tag}]");
+                        skippedCount++;
+                        continue;
+                    }
+
+                    LoggingService?.Info("Building assets for group", $"{g.shaderName} [{g.tag}]");
+                    GroupBuildData buildData = BuildGroupAssets(g, log, cell, content, atlasSize, grid, paddingPx, outputFolder);
+                    
+                    if (buildData != null)
+                    {
+                        groupBuildData.Add(buildData);
+                        LoggingService?.Success("Group assets complete", $"{g.shaderName} [{g.tag}]");
+                        processedCount++;
+                    }
+                }
+
+                LoggingService?.Info($"Asset creation complete: {processedCount} groups, {skippedCount} skipped");
+            }
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
+            }
+
+            // Save and import all assets at once
+            LoggingService?.Info("Saving and importing all assets (this may take a moment)...");
+            EditorUtility.SetDirty(log);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            LoggingService?.Success("Asset import complete");
+
+            // ===== PHASE 2: Clone root and apply materials to renderers =====
+            LoggingService?.Info("═══ Phase 2: Applying to Scene ═══");
+            
             GameObject applyRootObj = root;
             if (cloneRootOnApply && root)
             {
@@ -183,57 +274,32 @@ namespace K13A.MaterialMerger.Editor.Services
             var mergedApplyScans = GroupMergeUtility.BuildMergedScans(applyScans, ScanService);
             LoggingService?.Info("Rescan complete", $"{mergedApplyScans.Count} groups");
 
-            int cell = atlasSize / grid;
-            int content = cell - paddingPx * 2;
-            if (content <= 0)
-            {
-                content = cell;
-                paddingPx = 0;
-            }
-
             Undo.IncrementCurrentGroup();
             int ug = Undo.GetCurrentGroup();
 
-            int processedCount = 0;
-            int skippedCount = 0;
-
-            foreach (var g in mergedApplyScans)
+            // Apply to renderers using the build data
+            LoggingService?.Info("Applying materials to renderers");
+            int appliedCount = 0;
+            
+            foreach (var buildData in groupBuildData)
             {
-                if (!g.enabled)
+                // Find matching group in applyScans
+                var matchingGroup = mergedApplyScans.FirstOrDefault(g => 
+                    g.key.Equals(buildData.groupKey) && g.enabled);
+                
+                if (matchingGroup != null)
                 {
-                    skippedCount++;
-                    continue;
+                    ApplyGroupToRenderers(matchingGroup, buildData, log, cell, content, paddingPx, outputFolder, diffPolicy, sampleMaterial);
+                    appliedCount++;
                 }
-
-                bool hasUnresolved = g.rows.Any(r =>
-                    (r.type == ShaderUtil.ShaderPropertyType.Color ||
-                     r.type == ShaderUtil.ShaderPropertyType.Float ||
-                     r.type == ShaderUtil.ShaderPropertyType.Range ||
-                     r.type == ShaderUtil.ShaderPropertyType.Vector) &&
-                    r.distinctCount > 1 && !r.doAction);
-
-                if (hasUnresolved && diffPolicy == DiffPolicy.미해결이면중단)
-                {
-                    LoggingService?.Warning("Group skipped", $"Unresolved diff: {g.shaderName} [{g.tag}]");
-                    skippedCount++;
-                    continue;
-                }
-
-                LoggingService?.Info("Building group", $"{g.shaderName} [{g.tag}] - {g.mats.Count} materials");
-                BuildGroup(g, log, cell, content, atlasSize, grid, paddingPx, outputFolder, diffPolicy, sampleMaterial);
-                LoggingService?.Success("Group build complete", $"{g.shaderName} [{g.tag}]");
-                processedCount++;
             }
 
-            LoggingService?.Info("Saving assets");
+            Undo.CollapseUndoOperations(ug);
             EditorUtility.SetDirty(log);
             AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-
-            Undo.CollapseUndoOperations(ug);
 
             LoggingService?.Info("═══════════════════════════════════════", null, true);
-            LoggingService?.Success("    Build & Apply Complete", $"Processed: {processedCount}, Skipped: {skippedCount}", true);
+            LoggingService?.Success("    Build & Apply Complete", $"Processed: {appliedCount} groups", true);
             LoggingService?.Info("═══════════════════════════════════════", null, true);
             
             var message = $"{LocalizationService.Get(L10nKey.DialogComplete)}\n{LocalizationService.Get(L10nKey.DialogLog, logPath)}";
@@ -404,7 +470,7 @@ namespace K13A.MaterialMerger.Editor.Services
             }
         }
 
-        private void BuildGroup(
+        private GroupBuildData BuildGroupAssets(
             GroupScan g,
             KibaMultiAtlasMergerLog log,
             int cell,
@@ -412,16 +478,15 @@ namespace K13A.MaterialMerger.Editor.Services
             int atlasSize,
             int grid,
             int paddingPx,
-            string outputFolder,
-            DiffPolicy diffPolicy,
-            Material sampleMaterial)
+            string outputFolder)
         {
             LoggingService?.Info($"Preparing group build: {g.shaderName}", $"Materials: {g.mats.Count}, Pages: {g.pageCount}");
 
-            // Blit 머티리얼 초기화 (텍스처 샘플링에 필요)
-            string blitShaderPath = Path.Combine(outputFolder, "Hidden_KibaAtlasBlit.shader").Replace("\\", "/");
-            LoggingService?.Info("Checking blit shader", blitShaderPath);
-            TextureProcessor.EnsureBlitMaterial(blitShaderPath);
+            if (!TextureProcessor.BlitMaterial)
+            {
+                LoggingService?.Error("Blit material is missing", $"{g.shaderName} [{g.tag}]");
+                return null;
+            }
 
             string planFolder = GetPlanFolderName(g);
             string groupFolder = Path.Combine(outputFolder, planFolder).Replace("\\", "/");
@@ -619,19 +684,135 @@ namespace K13A.MaterialMerger.Editor.Services
                 var template = pageItems[0].mat;
                 var merged = new Material(template);
 
-                foreach (var prop in allAtlasProps)
+                string baseName = GetOutputMaterialBaseName(g);
+                baseName = AtlasGenerator.SanitizeFileName(baseName);
+                if (string.IsNullOrEmpty(baseName)) baseName = "Merged";
+                string matFile = g.pageCount > 1 ? $"{baseName}_P{page:00}.mat" : $"{baseName}.mat";
+                string matPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(pageFolder, matFile).Replace("\\", "/"));
+                AssetDatabase.CreateAsset(merged, matPath);
+                log.createdAssetPaths.Add(matPath);
+                LoggingService?.Info($"  Saved material: {System.IO.Path.GetFileName(matPath)}");
+
+                pageInfos.Add(new PageBuildInfo
                 {
-                    var atlasPath = Path.Combine(pageFolder, $"{AtlasGenerator.SanitizeFileName(prop)}.png").Replace("\\", "/");
-                    var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(atlasPath);
+                    atlasSize = actualAtlasSize,
+                    gridCols = actualGridCols,
+                    mergedMaterial = null,
+                    materialPath = matPath
+                });
+                
+                LoggingService?.Success($"Page {page + 1}/{g.pageCount} complete");
+            }
+
+            if (matToPage.Count == 0 || pageInfos.Count == 0)
+            {
+                LoggingService?.Warning("No material/page info to apply");
+                return null;
+            }
+
+            LoggingService?.Success($"Group assets built: {g.shaderName}");
+
+            return new GroupBuildData
+            {
+                groupKey = g.key,
+                pageInfos = pageInfos,
+                matToPage = matToPage
+            };
+        }
+
+        private void ApplyGroupToRenderers(
+            GroupScan g,
+            GroupBuildData buildData,
+            KibaMultiAtlasMergerLog log,
+            int cell,
+            int content,
+            int paddingPx,
+            string outputFolder,
+            DiffPolicy diffPolicy,
+            Material sampleMaterial)
+        {
+            if (g == null || buildData == null)
+            {
+                LoggingService?.Warning("Apply skipped: invalid group or build data");
+                return;
+            }
+
+            if (buildData.matToPage == null || buildData.matToPage.Count == 0 ||
+                buildData.pageInfos == null || buildData.pageInfos.Count == 0)
+            {
+                LoggingService?.Warning("Apply skipped: missing page/material data", $"{g.shaderName} [{g.tag}]");
+                return;
+            }
+
+            List<string> enabledTexProps = g.rows
+                .Where(r => r.type == ShaderUtil.ShaderPropertyType.TexEnv && r.doAction)
+                .Select(r => r.name)
+                .ToList();
+
+            List<Row> bakeRows = g.rows
+                .Where(r =>
+                    r.doAction &&
+                    r.type != ShaderUtil.ShaderPropertyType.TexEnv &&
+                    (r.bakeMode == BakeMode.색상굽기_텍스처타일 ||
+                     r.bakeMode == BakeMode.스칼라굽기_그레이타일 ||
+                     r.bakeMode == BakeMode.색상곱_텍스처타일))
+                .ToList();
+
+            List<Row> resetRows = g.rows
+                .Where(r =>
+                    r.doAction &&
+                    r.type != ShaderUtil.ShaderPropertyType.TexEnv &&
+                    r.bakeMode == BakeMode.리셋_쉐이더기본값)
+                .ToList();
+
+            HashSet<string> allAtlasProps = new HashSet<string>(enabledTexProps, StringComparer.Ordinal);
+            foreach (Row r in bakeRows)
+            {
+                if (string.IsNullOrEmpty(r.targetTexProp)) continue;
+                allAtlasProps.Add(r.targetTexProp);
+            }
+
+            string planFolder = GetPlanFolderName(g);
+            string groupFolder = Path.Combine(outputFolder, planFolder).Replace("\\", "/");
+
+            LoggingService?.Info($"Loading merged materials: {g.shaderName} [{g.tag}]");
+            bool hasMissingMaterial = false;
+
+            for (int page = 0; page < buildData.pageInfos.Count; page++)
+            {
+                PageBuildInfo pageInfo = buildData.pageInfos[page];
+                if (string.IsNullOrEmpty(pageInfo.materialPath))
+                {
+                    LoggingService?.Warning("Missing material path", $"{g.shaderName} [{g.tag}] page {page + 1}");
+                    hasMissingMaterial = true;
+                    continue;
+                }
+
+                Material merged = AssetDatabase.LoadAssetAtPath<Material>(pageInfo.materialPath);
+                if (!merged)
+                {
+                    LoggingService?.Warning("Failed to load merged material", pageInfo.materialPath);
+                    hasMissingMaterial = true;
+                    continue;
+                }
+
+                string pageFolder = g.pageCount > 1
+                    ? Path.Combine(groupFolder, $"Page_{page:00}").Replace("\\", "/")
+                    : groupFolder;
+
+                foreach (string prop in allAtlasProps)
+                {
+                    string atlasPath = Path.Combine(pageFolder, $"{AtlasGenerator.SanitizeFileName(prop)}.png").Replace("\\", "/");
+                    Texture2D tex = AssetDatabase.LoadAssetAtPath<Texture2D>(atlasPath);
                     if (tex && merged.HasProperty(prop)) merged.SetTexture(prop, tex);
 
                     string stName = prop + "_ST";
                     if (merged.HasProperty(stName)) merged.SetVector(stName, new Vector4(1, 1, 0, 0));
                 }
 
-                var defMat = TextureProcessor.GetDefaultMaterial(g.key.shader);
+                Material defMat = TextureProcessor.GetDefaultMaterial(g.key.shader);
 
-                foreach (var r in resetRows)
+                foreach (Row r in resetRows)
                 {
                     if (!merged || !merged.HasProperty(r.name) || !defMat) continue;
 
@@ -643,7 +824,7 @@ namespace K13A.MaterialMerger.Editor.Services
                         merged.SetFloat(r.name, defMat.GetFloat(r.name));
                 }
 
-                foreach (var r in g.rows)
+                foreach (Row r in g.rows)
                 {
                     if (!r.doAction) continue;
                     if (!r.resetSourceAfterBake) continue;
@@ -667,34 +848,17 @@ namespace K13A.MaterialMerger.Editor.Services
                 if (diffPolicy == DiffPolicy.샘플머테리얼기준으로진행 && sampleMaterial)
                     ApplySampleMaterialOverrides(g, merged, sampleMaterial);
 
-                string baseName = GetOutputMaterialBaseName(g);
-                baseName = AtlasGenerator.SanitizeFileName(baseName);
-                if (string.IsNullOrEmpty(baseName)) baseName = "Merged";
-                string matFile = g.pageCount > 1 ? $"{baseName}_P{page:00}.mat" : $"{baseName}.mat";
-                string matPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(pageFolder, matFile).Replace("\\", "/"));
-                AssetDatabase.CreateAsset(merged, matPath);
-                log.createdAssetPaths.Add(matPath);
-                LoggingService?.Info($"  Saved material: {System.IO.Path.GetFileName(matPath)}");
-
-                pageInfos.Add(new PageBuildInfo
-                {
-                    atlasSize = actualAtlasSize,
-                    gridCols = actualGridCols,
-                    mergedMaterial = merged
-                });
-                
-                LoggingService?.Success($"Page {page + 1}/{g.pageCount} complete");
+                EditorUtility.SetDirty(merged);
+                pageInfo.mergedMaterial = merged;
             }
 
-            if (matToPage.Count == 0 || pageInfos.Count == 0)
+            if (hasMissingMaterial || buildData.pageInfos.Any(p => p == null || !p.mergedMaterial))
             {
-                LoggingService?.Warning("No material/page info to apply");
+                LoggingService?.Error("Apply skipped: merged materials missing", $"{g.shaderName} [{g.tag}]");
                 return;
             }
 
-            LoggingService?.Info("Applying materials to renderers");
-            ApplyToRenderers(g, matToPage, pageInfos, log, cell, content, paddingPx, outputFolder);
-            LoggingService?.Success($"Group build complete: {g.shaderName}");
+            ApplyToRenderers(g, buildData.matToPage, buildData.pageInfos, log, cell, content, paddingPx, outputFolder);
         }
 
         private void ApplySampleMaterialOverrides(GroupScan g, Material merged, Material sampleMaterial)
