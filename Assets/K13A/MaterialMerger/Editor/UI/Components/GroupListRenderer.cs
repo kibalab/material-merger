@@ -49,19 +49,23 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                 GUILayout.Label(Localization.Get(L10nKey.PlanList), Styles.stSubTitle);
                 GUILayout.FlexibleSpace();
 
-                if (GUILayout.Button(Localization.Get(L10nKey.ExpandAll), Styles.stToolbarBtn, GUILayout.Width(95)))
+                var expandContent = new GUIContent(Localization.Get(L10nKey.ExpandAll), "Expand all plans.");
+                if (GUILayout.Button(expandContent, Styles.stToolbarBtn, GUILayout.Width(95)))
                     foreach (var g in scans)
                         g.foldout = true;
 
-                if (GUILayout.Button(Localization.Get(L10nKey.CollapseAll), Styles.stToolbarBtn, GUILayout.Width(95)))
+                var collapseContent = new GUIContent(Localization.Get(L10nKey.CollapseAll), "Collapse all plans.");
+                if (GUILayout.Button(collapseContent, Styles.stToolbarBtn, GUILayout.Width(95)))
                     foreach (var g in scans)
                         g.foldout = false;
 
-                if (GUILayout.Button(Localization.Get(L10nKey.EnableAll), Styles.stToolbarBtn, GUILayout.Width(90)))
+                var enableContent = new GUIContent(Localization.Get(L10nKey.EnableAll), "Enable all plans for build.");
+                if (GUILayout.Button(enableContent, Styles.stToolbarBtn, GUILayout.Width(90)))
                     foreach (var g in scans)
                         g.enabled = true;
 
-                if (GUILayout.Button(Localization.Get(L10nKey.DisableAll), Styles.stToolbarBtn, GUILayout.Width(90)))
+                var disableContent = new GUIContent(Localization.Get(L10nKey.DisableAll), "Disable all plans.");
+                if (GUILayout.Button(disableContent, Styles.stToolbarBtn, GUILayout.Width(90)))
                     foreach (var g in scans)
                         g.enabled = false;
             }

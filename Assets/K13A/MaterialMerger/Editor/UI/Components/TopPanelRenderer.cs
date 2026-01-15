@@ -49,7 +49,8 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                 using (new EditorGUI.DisabledScope(!state.root))
                 {
                     var scanText = Localization.Get(L10nKey.Scan);
-                    var scanContent = Utilities.GUIUtility.MakeIconContent(scanText, "Refresh", "d_Refresh", scanText);
+                    var scanContent = Utilities.GUIUtility.MakeIconContent(scanText, "Refresh", "d_Refresh",
+                        "Scan the selected root and build material plans.");
                     if (GUILayout.Button(scanContent, Styles.stBigBtn, GUILayout.Width(140), GUILayout.Height(32)))
                         onScanClicked?.Invoke();
                 }
@@ -58,7 +59,8 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                                                      (state.cloneRootOnApply && !state.root)))
                 {
                     var buildText = Localization.Get(L10nKey.BuildAndApply);
-                    var buildContent = Utilities.GUIUtility.MakeIconContent(buildText, "PlayButton", "d_PlayButton", buildText);
+                    var buildContent = Utilities.GUIUtility.MakeIconContent(buildText, "PlayButton", "d_PlayButton",
+                        "Generate atlases and apply merged materials to meshes.");
                     if (GUILayout.Button(buildContent, Styles.stBigBtn, GUILayout.Width(180),
                             GUILayout.Height(32)))
                         onBuildClicked?.Invoke();
@@ -77,7 +79,8 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             var rootFieldRect = new Rect(rootLabelRect.xMax + 6, rootRect.y,
                 rootRect.width - MaterialMergerStyles.TopLabelWidth - 6, rootRect.height);
 
-            EditorGUI.LabelField(rootLabelRect, Localization.Get(L10nKey.Root));
+            var rootLabel = new GUIContent(Localization.Get(L10nKey.Root), "Root GameObject to scan and apply.");
+            EditorGUI.LabelField(rootLabelRect, rootLabel);
             EditorGUI.BeginChangeCheck();
             var newRoot = (GameObject)EditorGUI.ObjectField(rootFieldRect, state.root, typeof(GameObject), true);
             if (EditorGUI.EndChangeCheck())
@@ -96,7 +99,8 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             var scanValueRect = new Rect(scanLabelRect.xMax + 6, scanRect.y,
                 scanRect.width - MaterialMergerStyles.TopLabelWidth - 6, scanRect.height);
 
-            var scanLabelContent = new GUIContent(Localization.Get(L10nKey.LastScan));
+            var scanLabelContent = new GUIContent(Localization.Get(L10nKey.LastScan),
+                "Time of the last scan saved to the profile.");
             EditorGUI.LabelField(scanLabelRect, scanLabelContent, Styles.stMiniDim);
             EditorGUI.LabelField(scanValueRect, Utilities.GUIUtility.GetLastScanLabel(state.profile, Localization),
                 Styles.stMiniDim);
@@ -119,7 +123,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
 
             var outputFolderText = Localization.Get(L10nKey.OutputFolder);
             if (GUI.Button(outBtnRect, Utilities.GUIUtility.MakeIconContent(outputFolderText, "Folder Icon",
-                    "d_Folder Icon", outputFolderText), Styles.stToolbarBtn))
+                    "d_Folder Icon", "Choose a folder under Assets to save generated files."), Styles.stToolbarBtn))
             {
                 var picked = EditorUtility.OpenFolderPanel(Localization.Get(L10nKey.DialogOutputFolderTitle), Application.dataPath, "");
                 if (!string.IsNullOrEmpty(picked))

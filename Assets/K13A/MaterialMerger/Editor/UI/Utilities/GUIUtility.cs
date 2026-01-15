@@ -40,7 +40,16 @@ namespace K13A.MaterialMerger.Editor.UI.Utilities
         /// </summary>
         public static void DrawPill(string text, bool warn, GUIStyle normalStyle, GUIStyle warnStyle)
         {
-            GUILayout.Label(text, warn ? warnStyle : normalStyle, GUILayout.Height(18));
+            DrawPill(text, warn, normalStyle, warnStyle, null);
+        }
+
+        /// <summary>
+        /// 작은 레이블 필 그리기 (툴팁 포함)
+        /// </summary>
+        public static void DrawPill(string text, bool warn, GUIStyle normalStyle, GUIStyle warnStyle, string tooltip)
+        {
+            var content = string.IsNullOrEmpty(tooltip) ? new GUIContent(text) : new GUIContent(text, tooltip);
+            GUILayout.Label(content, warn ? warnStyle : normalStyle, GUILayout.Height(18));
         }
 
         /// <summary>
