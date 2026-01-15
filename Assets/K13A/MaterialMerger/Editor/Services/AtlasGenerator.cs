@@ -10,9 +10,14 @@ namespace K13A.MaterialMerger.Editor.Services
     {
         public Texture2D CreateAtlas(int size, bool sRGB)
         {
-            var texture = new Texture2D(size, size, TextureFormat.RGBA32, true, !sRGB);
+            return CreateAtlas(size, size, sRGB);
+        }
+
+        public Texture2D CreateAtlas(int width, int height, bool sRGB)
+        {
+            var texture = new Texture2D(width, height, TextureFormat.RGBA32, true, !sRGB);
             texture.wrapMode = TextureWrapMode.Clamp;
-            var fill = new Color32[size * size];
+            var fill = new Color32[width * height];
             texture.SetPixels32(fill);
             return texture;
         }

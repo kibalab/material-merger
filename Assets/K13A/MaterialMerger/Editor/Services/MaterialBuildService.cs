@@ -320,6 +320,35 @@ namespace K13A.MaterialMerger.Editor.Services
                 string pageFolder = Path.Combine(groupFolder, $"Page_{page:00}").Replace("\\", "/");
                 Directory.CreateDirectory(pageFolder);
 
+                // 페이지당 실제 머티리얼 수에 맞춰 동적 그리드 계산
+                int actualMatCount = pageItems.Count;
+
+                // 최적의 그리드 배치 계산 (정사각형에 가깝게)
+                int actualGridCols = Mathf.CeilToInt(Mathf.Sqrt(actualMatCount));
+                int actualGridRows = Mathf.CeilToInt(actualMatCount / (float)actualGridCols);
+
+                // 원래 설정된 그리드 크기를 초과하지 않도록 제한
+                if (actualGridCols > grid)
+                {
+                    actualGridCols = grid;
+                    actualGridRows = Mathf.CeilToInt(actualMatCount / (float)grid);
+                }
+
+                // 동적 아틀라스 크기 계산
+                // cell = 각 타일이 차지하는 공간 (패딩 포함)
+                // 전체 크기 = 필요한 그리드 수 * cell
+                int actualAtlasWidth = actualGridCols * cell;
+                int actualAtlasHeight = actualGridRows * cell;
+
+                // 최대 크기 제한 (사용자 설정 초과 방지)
+                actualAtlasWidth = Mathf.Min(actualAtlasWidth, atlasSize);
+                actualAtlasHeight = Mathf.Min(actualAtlasHeight, atlasSize);
+
+                // 최소 크기 보장 (너무 작으면 품질 저하)
+                int minSize = Mathf.Max(cell, 256);
+                actualAtlasWidth = Mathf.Max(actualAtlasWidth, minSize);
+                actualAtlasHeight = Mathf.Max(actualAtlasHeight, minSize);
+
                 var atlasByProp = new Dictionary<string, Texture2D>(StringComparer.Ordinal);
 
                 foreach (var prop in allAtlasProps)
@@ -327,13 +356,15 @@ namespace K13A.MaterialMerger.Editor.Services
                     bool normalLike = texMeta.TryGetValue(prop, out var meta) ? meta.isNormalLike : IsNormalLikeProperty(prop);
                     bool sRGB = texMeta.TryGetValue(prop, out meta) ? meta.isSRGB : !IsLinearProperty(prop);
                     if (normalLike) sRGB = false;
-                    atlasByProp[prop] = AtlasGenerator.CreateAtlas(atlasSize, sRGB);
+
+                    // 직사각형 아틀라스 생성 (필요한 크기만큼만)
+                    atlasByProp[prop] = AtlasGenerator.CreateAtlas(actualAtlasWidth, actualAtlasHeight, sRGB);
                 }
 
                 for (int i = 0; i < pageItems.Count; i++)
                 {
-                    int gx = i % grid;
-                    int gy = i / grid;
+                    int gx = i % actualGridCols;
+                    int gy = i / actualGridCols;
 
                     int px = gx * cell + paddingPx;
                     int py = gy * cell + paddingPx;
@@ -472,7 +503,8 @@ namespace K13A.MaterialMerger.Editor.Services
                 AssetDatabase.CreateAsset(merged, matPath);
                 log.createdAssetPaths.Add(matPath);
 
-                ApplyToRenderers(g, pageItems, merged, log, cell, content, atlasSize, grid, paddingPx, outputFolder);
+                ApplyToRenderers(g, pageItems, merged, log, cell, content,
+                    actualAtlasWidth, actualAtlasHeight, actualGridCols, paddingPx, outputFolder);
             }
         }
 
@@ -483,12 +515,14 @@ namespace K13A.MaterialMerger.Editor.Services
             KibaMultiAtlasMergerLog log,
             int cell,
             int content,
-            int atlasSizePx,
-            int grid,
+            int atlasWidth,
+            int atlasHeight,
+            int gridCols,
             int paddingPx,
             string outputFolder)
         {
-            float tileScale = content / (float)atlasSizePx;
+            float tileScaleX = content / (float)atlasWidth;
+            float tileScaleY = content / (float)atlasHeight;
 
             var matToIndex = new Dictionary<Material, int>();
             for (int i = 0; i < pageItems.Count; i++) matToIndex[pageItems[i].mat] = i;
@@ -541,12 +575,12 @@ namespace K13A.MaterialMerger.Editor.Services
                     if (!replaced) continue;
                     r.sharedMaterials = shared;
 
-                    int gx = tileIndex % grid;
-                    int gy = tileIndex / grid;
-                    float ox = (gx * cell + paddingPx) / (float)atlasSizePx;
-                    float oy = (gy * cell + paddingPx) / (float)atlasSizePx;
+                    int gx = tileIndex % gridCols;
+                    int gy = tileIndex / gridCols;
+                    float ox = (gx * cell + paddingPx) / (float)atlasWidth;
+                    float oy = (gy * cell + paddingPx) / (float)atlasHeight;
 
-                    var scale = new Vector2(tileScale, tileScale);
+                    var scale = new Vector2(tileScaleX, tileScaleY);
                     var offset = new Vector2(ox, oy);
 
                     Mesh beforeMesh = null;

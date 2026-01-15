@@ -6,9 +6,14 @@ namespace K13A.MaterialMerger.Editor.Services
     public interface IAtlasGenerator
     {
         /// <summary>
-        /// 새 아틀라스 텍스처 생성
+        /// 새 아틀라스 텍스처 생성 (정사각형)
         /// </summary>
         Texture2D CreateAtlas(int size, bool sRGB);
+
+        /// <summary>
+        /// 새 아틀라스 텍스처 생성 (직사각형)
+        /// </summary>
+        Texture2D CreateAtlas(int width, int height, bool sRGB);
 
         /// <summary>
         /// 아틀라스에 타일 배치 (패딩 포함)
