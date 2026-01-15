@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 using K13A.MaterialMerger.Editor.Models;
 using K13A.MaterialMerger.Editor.Services.Localization;
 
@@ -694,19 +695,31 @@ namespace K13A.MaterialMerger.Editor.Services
 
                 transforms.Sort((a, b) => a.subMeshIndex.CompareTo(b.subMeshIndex));
 
+                var mergeCandidates = new HashSet<Material>();
+                foreach (var page in pageInfos)
+                    if (page != null && page.mergedMaterial)
+                        mergeCandidates.Add(page.mergedMaterial);
+
+                int[] submeshMergeMap = null;
+                if (TryBuildSubmeshMergeMap(beforeMesh, shared, mergeCandidates, out var mergedMaterials, out var mergeMap))
+                {
+                    shared = mergedMaterials;
+                    submeshMergeMap = mergeMap;
+                }
+
                 Undo.RecordObject(r, "머지 머티리얼 적용");
                 r.sharedMaterials = shared;
 
                 if (smr)
                 {
                     Undo.RecordObject(smr, "메쉬 UV 리맵");
-                    afterMesh = MeshRemapper.GetOrCreateRemappedMesh(beforeMesh, transforms, meshCache, outputFolder);
+                    afterMesh = MeshRemapper.GetOrCreateRemappedMesh(beforeMesh, transforms, meshCache, outputFolder, submeshMergeMap);
                     smr.sharedMesh = afterMesh;
                 }
                 else if (mf)
                 {
                     Undo.RecordObject(mf, "메쉬 UV 리맵");
-                    afterMesh = MeshRemapper.GetOrCreateRemappedMesh(beforeMesh, transforms, meshCache, outputFolder);
+                    afterMesh = MeshRemapper.GetOrCreateRemappedMesh(beforeMesh, transforms, meshCache, outputFolder, submeshMergeMap);
                     mf.sharedMesh = afterMesh;
                 }
 
@@ -736,6 +749,65 @@ namespace K13A.MaterialMerger.Editor.Services
             string shaderName = g.key.shader ? g.key.shader.name : g.shaderName;
             if (!string.IsNullOrWhiteSpace(shaderName)) return shaderName;
             return "Merged";
+        }
+
+        private bool TryBuildSubmeshMergeMap(
+            Mesh mesh,
+            Material[] materials,
+            HashSet<Material> mergeCandidates,
+            out Material[] mergedMaterials,
+            out int[] submeshMergeMap)
+        {
+            mergedMaterials = null;
+            submeshMergeMap = null;
+            if (!mesh || materials == null || materials.Length == 0) return false;
+
+            int subMeshCount = mesh.subMeshCount;
+            if (subMeshCount <= 1) return false;
+
+            var effectiveMaterials = new Material[subMeshCount];
+            var fallback = materials[materials.Length - 1];
+            for (int s = 0; s < subMeshCount; s++)
+                effectiveMaterials[s] = s < materials.Length ? materials[s] : fallback;
+
+            var keyToIndex = new Dictionary<(int, MeshTopology), int>();
+            var uniqueMaterials = new List<Material>();
+            var map = new int[subMeshCount];
+
+            for (int s = 0; s < subMeshCount; s++)
+            {
+                var mat = effectiveMaterials[s];
+                var topology = mesh.GetTopology(s);
+
+                if (!mat)
+                {
+                    map[s] = uniqueMaterials.Count;
+                    uniqueMaterials.Add(mat);
+                    continue;
+                }
+
+                if (mergeCandidates != null && !mergeCandidates.Contains(mat))
+                {
+                    map[s] = uniqueMaterials.Count;
+                    uniqueMaterials.Add(mat);
+                    continue;
+                }
+
+                var key = (mat.GetInstanceID(), topology);
+                if (!keyToIndex.TryGetValue(key, out var index))
+                {
+                    index = uniqueMaterials.Count;
+                    uniqueMaterials.Add(mat);
+                    keyToIndex[key] = index;
+                }
+                map[s] = index;
+            }
+
+            if (uniqueMaterials.Count >= subMeshCount) return false;
+
+            mergedMaterials = uniqueMaterials.ToArray();
+            submeshMergeMap = map;
+            return true;
         }
 
         private Vector4 GetST(Material mat, string prop)

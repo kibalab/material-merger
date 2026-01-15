@@ -15,16 +15,17 @@ namespace K13A.MaterialMerger.Editor.Services
             Mesh sourceMesh,
             IReadOnlyList<SubmeshUvTransform> transforms,
             Dictionary<(Mesh, string), Mesh> cache,
-            string outputFolder)
+            string outputFolder,
+            IReadOnlyList<int> submeshMergeMap = null)
         {
             if (!sourceMesh || transforms == null || transforms.Count == 0)
                 return sourceMesh;
 
-            string key = BuildCacheKey(transforms);
+            string key = BuildCacheKey(transforms, submeshMergeMap);
             var cacheKey = (sourceMesh, key);
             if (cache.TryGetValue(cacheKey, out var cached) && cached) return cached;
 
-            var remappedMesh = RemapMeshBySubmesh(sourceMesh, transforms);
+            var remappedMesh = RemapMeshBySubmesh(sourceMesh, transforms, submeshMergeMap);
 
             string meshFolder = Path.Combine(outputFolder, "_Meshes").Replace("\\", "/");
             Directory.CreateDirectory(meshFolder);
@@ -35,7 +36,9 @@ namespace K13A.MaterialMerger.Editor.Services
             return remappedMesh;
         }
 
-        private static string BuildCacheKey(IReadOnlyList<SubmeshUvTransform> transforms)
+        private static string BuildCacheKey(
+            IReadOnlyList<SubmeshUvTransform> transforms,
+            IReadOnlyList<int> submeshMergeMap)
         {
             var sb = new StringBuilder(transforms.Count * 32);
             for (int i = 0; i < transforms.Count; i++)
@@ -47,10 +50,22 @@ namespace K13A.MaterialMerger.Editor.Services
                     .Append(BitConverter.SingleToInt32Bits(t.offset.x)).Append(',')
                     .Append(BitConverter.SingleToInt32Bits(t.offset.y)).Append(';');
             }
+            if (submeshMergeMap != null && submeshMergeMap.Count > 0)
+            {
+                sb.Append("|m:");
+                for (int i = 0; i < submeshMergeMap.Count; i++)
+                {
+                    if (i > 0) sb.Append(',');
+                    sb.Append(submeshMergeMap[i]);
+                }
+            }
             return sb.ToString();
         }
 
-        private static Mesh RemapMeshBySubmesh(Mesh sourceMesh, IReadOnlyList<SubmeshUvTransform> transforms)
+        private static Mesh RemapMeshBySubmesh(
+            Mesh sourceMesh,
+            IReadOnlyList<SubmeshUvTransform> transforms,
+            IReadOnlyList<int> submeshMergeMap)
         {
             int subMeshCount = sourceMesh.subMeshCount;
             int srcVertexCount = sourceMesh.vertexCount;
@@ -58,6 +73,27 @@ namespace K13A.MaterialMerger.Editor.Services
             var transformBySubmesh = new Dictionary<int, SubmeshUvTransform>();
             for (int i = 0; i < transforms.Count; i++)
                 transformBySubmesh[transforms[i].subMeshIndex] = transforms[i];
+
+            int[] mergeMap = null;
+            int mergedSubmeshCount = subMeshCount;
+            if (submeshMergeMap != null && submeshMergeMap.Count >= subMeshCount)
+            {
+                mergeMap = new int[subMeshCount];
+                int maxIndex = -1;
+                for (int i = 0; i < subMeshCount; i++)
+                {
+                    int idx = submeshMergeMap[i];
+                    if (idx < 0) idx = 0;
+                    mergeMap[i] = idx;
+                    if (idx > maxIndex) maxIndex = idx;
+                }
+                mergedSubmeshCount = maxIndex + 1;
+                if (mergedSubmeshCount <= 0)
+                {
+                    mergeMap = null;
+                    mergedSubmeshCount = subMeshCount;
+                }
+            }
 
             var srcVertices = sourceMesh.vertices;
             var srcNormals = sourceMesh.normals;
@@ -92,14 +128,23 @@ namespace K13A.MaterialMerger.Editor.Services
             var newBoneWeights = hasBoneWeights ? new List<BoneWeight>(srcVertexCount) : null;
             var newToOld = new List<int>(srcVertexCount);
 
-            var submeshIndices = new int[subMeshCount][];
-            var submeshTopologies = new MeshTopology[subMeshCount];
+            var mergedIndices = new List<int>[mergedSubmeshCount];
+            var mergedTopologies = new MeshTopology[mergedSubmeshCount];
+            var topologySet = new bool[mergedSubmeshCount];
 
             for (int s = 0; s < subMeshCount; s++)
             {
                 var indices = sourceMesh.GetIndices(s);
                 var topology = sourceMesh.GetTopology(s);
-                submeshTopologies[s] = topology;
+                int target = mergeMap != null ? mergeMap[s] : s;
+                if (target < 0 || target >= mergedSubmeshCount)
+                    target = s;
+
+                if (!topologySet[target])
+                {
+                    mergedTopologies[target] = topology;
+                    topologySet[target] = true;
+                }
 
                 var remap = new Dictionary<int, int>();
                 var newIndices = new int[indices.Length];
@@ -139,7 +184,9 @@ namespace K13A.MaterialMerger.Editor.Services
                     newIndices[i] = dstIndex;
                 }
 
-                submeshIndices[s] = newIndices;
+                if (mergedIndices[target] == null)
+                    mergedIndices[target] = new List<int>(newIndices.Length);
+                mergedIndices[target].AddRange(newIndices);
             }
 
             var remappedMesh = new Mesh();
@@ -161,9 +208,13 @@ namespace K13A.MaterialMerger.Editor.Services
             if (bindposes != null && bindposes.Length > 0)
                 remappedMesh.bindposes = bindposes;
 
-            remappedMesh.subMeshCount = subMeshCount;
-            for (int s = 0; s < subMeshCount; s++)
-                remappedMesh.SetIndices(submeshIndices[s], submeshTopologies[s], s, false);
+            remappedMesh.subMeshCount = mergedSubmeshCount;
+            for (int s = 0; s < mergedSubmeshCount; s++)
+            {
+                var list = mergedIndices[s] ?? new List<int>();
+                var topology = topologySet[s] ? mergedTopologies[s] : MeshTopology.Triangles;
+                remappedMesh.SetIndices(list.ToArray(), topology, s, false);
+            }
 
             remappedMesh.bounds = sourceMesh.bounds;
             CopyBlendShapes(sourceMesh, remappedMesh, newToOld);

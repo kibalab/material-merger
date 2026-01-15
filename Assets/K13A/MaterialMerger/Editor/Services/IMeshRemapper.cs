@@ -20,7 +20,8 @@ namespace K13A.MaterialMerger.Editor.Services
             Mesh sourceMesh,
             IReadOnlyList<SubmeshUvTransform> transforms,
             Dictionary<(Mesh, string), Mesh> cache,
-            string outputFolder
+            string outputFolder,
+            IReadOnlyList<int> submeshMergeMap = null
         );
     }
 }
