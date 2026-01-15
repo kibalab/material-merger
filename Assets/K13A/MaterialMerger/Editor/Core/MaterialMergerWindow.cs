@@ -69,7 +69,7 @@ namespace K13A.MaterialMerger.Editor.Core
 
             EditorGUI.BeginChangeCheck();
 
-            topPanel.DrawTopPanel(state, OnScan, OnBuildWithConfirm, OnRootChanged, OnOutputFolderChanged);
+            topPanel.DrawTopPanel(state, OnScan, OnBuildWithConfirm, OnRootChanged, OnOutputFolderChanged, OnLanguageChanged);
             EditorGUILayout.Space(8);
             globalPanel.DrawGlobalSettings(state);
             EditorGUILayout.Space(8);
@@ -204,6 +204,14 @@ namespace K13A.MaterialMerger.Editor.Core
         private void OnOutputFolderChanged(string newFolder)
         {
             state.outputFolder = newFolder;
+        }
+
+        private void OnLanguageChanged(Language language)
+        {
+            if (localizationService.CurrentLanguage == language) return;
+            localizationService.CurrentLanguage = language;
+            titleContent = new GUIContent(localizationService.Get(L10nKey.WindowTitle));
+            Repaint();
         }
 
         #endregion

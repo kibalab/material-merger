@@ -23,7 +23,8 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             Action onScanClicked,
             Action onBuildClicked,
             Action<GameObject> onRootChanged,
-            Action<string> onOutputFolderChanged)
+            Action<string> onOutputFolderChanged,
+            Action<Language> onLanguageChanged)
         {
             using (new EditorGUILayout.VerticalScope(Styles.stBox))
             {
@@ -33,6 +34,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                 DrawLastScanLabel(state);
                 EditorGUILayout.Space(4);
                 DrawOutputFolderField(state, onOutputFolderChanged);
+                DrawLanguageField(onLanguageChanged);
             }
         }
 
@@ -143,6 +145,30 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             }
 
             EditorGUI.LabelField(outPathRect, state.outputFolder, Styles.stMiniDim);
+        }
+
+        private void DrawLanguageField(Action<Language> onLanguageChanged)
+        {
+            float lineHeight = EditorGUIUtility.singleLineHeight;
+            var langRect = EditorGUILayout.GetControlRect(false, lineHeight);
+            var langLabelRect = new Rect(langRect.x, langRect.y, MaterialMergerStyles.TopLabelWidth, langRect.height);
+            var langFieldRect = new Rect(langLabelRect.xMax + 6, langRect.y,
+                langRect.width - MaterialMergerStyles.TopLabelWidth - 6, langRect.height);
+
+            var label = new GUIContent(Localization.Get(L10nKey.LanguageSettings), "Change UI language.");
+            EditorGUI.LabelField(langLabelRect, label);
+
+            var options = new[]
+            {
+                new GUIContent(Localization.Get(L10nKey.LanguageKorean)),
+                new GUIContent(Localization.Get(L10nKey.LanguageEnglish)),
+                new GUIContent(Localization.Get(L10nKey.LanguageJapanese))
+            };
+
+            int current = (int)Localization.CurrentLanguage;
+            int next = EditorGUI.Popup(langFieldRect, current, options);
+            if (next != current && onLanguageChanged != null)
+                onLanguageChanged((Language)next);
         }
     }
 }
