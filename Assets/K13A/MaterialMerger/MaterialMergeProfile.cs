@@ -80,6 +80,7 @@ namespace K13A.MaterialMerger
         public int paddingPx = 16;
 
         public int diffPolicy;
+        public Material diffSampleMaterial;
         public string outputFolder = "Assets/_Generated/MultiAtlas";
 
         public bool globalFoldout = true;

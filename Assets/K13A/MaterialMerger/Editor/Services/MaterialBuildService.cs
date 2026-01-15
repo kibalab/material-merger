@@ -36,6 +36,7 @@ namespace K13A.MaterialMerger.Editor.Services
             GameObject root,
             List<GroupScan> scans,
             DiffPolicy diffPolicy,
+            Material sampleMaterial,
             string outputFolder)
         {
             if (scans == null || scans.Count == 0)
@@ -106,6 +107,7 @@ namespace K13A.MaterialMerger.Editor.Services
             GameObject root,
             List<GroupScan> scans,
             DiffPolicy diffPolicy,
+            Material sampleMaterial,
             bool cloneRootOnApply,
             bool deactivateOriginalRoot,
             string outputFolder,
@@ -179,7 +181,7 @@ namespace K13A.MaterialMerger.Editor.Services
                 if (hasUnresolved && diffPolicy == DiffPolicy.미해결이면중단)
                     continue;
 
-                BuildGroup(g, log, cell, content, atlasSize, grid, paddingPx, outputFolder);
+                BuildGroup(g, log, cell, content, atlasSize, grid, paddingPx, outputFolder, diffPolicy, sampleMaterial);
             }
 
             EditorUtility.SetDirty(log);
@@ -295,7 +297,9 @@ namespace K13A.MaterialMerger.Editor.Services
             int atlasSize,
             int grid,
             int paddingPx,
-            string outputFolder)
+            string outputFolder,
+            DiffPolicy diffPolicy,
+            Material sampleMaterial)
         {
             // Blit 머티리얼 초기화 (텍스처 샘플링에 필요)
             string blitShaderPath = Path.Combine(outputFolder, "Hidden_KibaAtlasBlit.shader").Replace("\\", "/");
@@ -525,6 +529,9 @@ namespace K13A.MaterialMerger.Editor.Services
                         merged.SetFloat(r.name, defMat.GetFloat(r.name));
                 }
 
+                if (diffPolicy == DiffPolicy.샘플머테리얼기준으로진행 && sampleMaterial)
+                    ApplySampleMaterialOverrides(g, merged, sampleMaterial);
+
                 string baseName = GetOutputMaterialBaseName(g);
                 baseName = AtlasGenerator.SanitizeFileName(baseName);
                 if (string.IsNullOrEmpty(baseName)) baseName = "Merged";
@@ -544,6 +551,24 @@ namespace K13A.MaterialMerger.Editor.Services
             if (matToPage.Count == 0 || pageInfos.Count == 0) return;
 
             ApplyToRenderers(g, matToPage, pageInfos, log, cell, content, paddingPx, outputFolder);
+        }
+
+        private void ApplySampleMaterialOverrides(GroupScan g, Material merged, Material sampleMaterial)
+        {
+            if (g == null || !merged || !sampleMaterial) return;
+
+            foreach (var r in g.rows)
+            {
+                if (r == null || r.doAction || r.distinctCount <= 1) continue;
+                if (!merged.HasProperty(r.name) || !sampleMaterial.HasProperty(r.name)) continue;
+
+                if (r.type == ShaderUtil.ShaderPropertyType.Color)
+                    merged.SetColor(r.name, sampleMaterial.GetColor(r.name));
+                else if (r.type == ShaderUtil.ShaderPropertyType.Vector)
+                    merged.SetVector(r.name, sampleMaterial.GetVector(r.name));
+                else if (r.type == ShaderUtil.ShaderPropertyType.Float || r.type == ShaderUtil.ShaderPropertyType.Range)
+                    merged.SetFloat(r.name, sampleMaterial.GetFloat(r.name));
+            }
         }
 
         private void ApplyToRenderers(

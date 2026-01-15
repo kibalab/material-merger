@@ -32,6 +32,7 @@ namespace K13A.MaterialMerger.Editor.Core
 
         // 머지 정책
         public DiffPolicy diffPolicy = DiffPolicy.미해결이면중단;
+        public Material diffSampleMaterial;
         public string outputFolder = "Assets/_Generated/MultiAtlas";
 
         // UI 상태

@@ -55,8 +55,12 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
         public const string Policy = "global.policy";
         public const string UnresolvedDiffPolicy = "global.unresolved_diff_policy";
         public const string UnresolvedDiffPolicyTooltip = "global.unresolved_diff_policy_tooltip";
+        public const string SampleMaterial = "global.sample_material";
+        public const string SampleMaterialTooltip = "global.sample_material_tooltip";
         public const string PolicySummaryStop = "global.policy_summary_stop";
         public const string PolicySummaryProceed = "global.policy_summary_proceed";
+        public const string PolicySummarySample = "global.policy_summary_sample";
+        public const string PolicySummarySampleMissing = "global.policy_summary_sample_missing";
 
         // Statistics
         public const string Statistics = "stats.statistics";

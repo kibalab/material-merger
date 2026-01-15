@@ -18,6 +18,7 @@ namespace K13A.MaterialMerger.Editor.Services
             GameObject root,
             List<GroupScan> scans,
             DiffPolicy diffPolicy,
+            Material sampleMaterial,
             string outputFolder
         );
 
@@ -28,6 +29,7 @@ namespace K13A.MaterialMerger.Editor.Services
             GameObject root,
             List<GroupScan> scans,
             DiffPolicy diffPolicy,
+            Material sampleMaterial,
             bool cloneRootOnApply,
             bool deactivateOriginalRoot,
             string outputFolder,

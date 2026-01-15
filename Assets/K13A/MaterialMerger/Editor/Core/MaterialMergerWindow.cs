@@ -161,6 +161,7 @@ namespace K13A.MaterialMerger.Editor.Core
                 state.root,
                 state.scans,
                 state.diffPolicy,
+                state.diffSampleMaterial,
                 state.outputFolder
             );
         }
@@ -171,6 +172,7 @@ namespace K13A.MaterialMerger.Editor.Core
                 state.root,
                 state.scans,
                 state.diffPolicy,
+                state.diffSampleMaterial,
                 state.cloneRootOnApply,
                 state.deactivateOriginalRoot,
                 state.outputFolder,
@@ -234,6 +236,7 @@ namespace K13A.MaterialMerger.Editor.Core
             state.paddingPx = state.profile.paddingPx;
 
             state.diffPolicy = (DiffPolicy)state.profile.diffPolicy;
+            state.diffSampleMaterial = state.profile.diffSampleMaterial;
             if (!string.IsNullOrEmpty(state.profile.outputFolder))
                 state.outputFolder = state.profile.outputFolder;
 
@@ -283,6 +286,7 @@ namespace K13A.MaterialMerger.Editor.Core
             state.profile.paddingPx = state.paddingPx;
 
             state.profile.diffPolicy = (int)state.diffPolicy;
+            state.profile.diffSampleMaterial = state.diffSampleMaterial;
             state.profile.outputFolder = state.outputFolder;
 
             state.profile.globalFoldout = state.globalFoldout;

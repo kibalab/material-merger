@@ -71,8 +71,12 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 [L10nKey.Policy] = "정책",
                 [L10nKey.UnresolvedDiffPolicy] = "미해결 diff 처리",
                 [L10nKey.UnresolvedDiffPolicyTooltip] = "해결되지 않은 스칼라/색상 차이 처리 방식.",
+                [L10nKey.SampleMaterial] = "샘플 머티리얼",
+                [L10nKey.SampleMaterialTooltip] = "미해결 diff 처리에 사용할 샘플 머티리얼.",
                 [L10nKey.PolicySummaryStop] = "해결되지 않은 차이가 있으면 해당 플랜을 건너뜁니다.",
                 [L10nKey.PolicySummaryProceed] = "해결되지 않은 차이는 첫 번째 머티리얼 값을 사용합니다.",
+                [L10nKey.PolicySummarySample] = "미해결 차이는 샘플 머티리얼 값을 사용합니다.",
+                [L10nKey.PolicySummarySampleMissing] = "샘플 머티리얼이 없어 첫 번째 머티리얼 값을 사용합니다.",
 
                 // Statistics
                 [L10nKey.Statistics] = "통계",
@@ -257,8 +261,12 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 [L10nKey.Policy] = "Policy",
                 [L10nKey.UnresolvedDiffPolicy] = "Unresolved Diff Policy",
                 [L10nKey.UnresolvedDiffPolicyTooltip] = "How to handle unresolved scalar/color differences.",
+                [L10nKey.SampleMaterial] = "Sample Material",
+                [L10nKey.SampleMaterialTooltip] = "Sample material used to resolve unresolved diffs.",
                 [L10nKey.PolicySummaryStop] = "Skip this plan if there are unresolved differences.",
                 [L10nKey.PolicySummaryProceed] = "Use first material values for unresolved differences.",
+                [L10nKey.PolicySummarySample] = "Unresolved differences use sample material values.",
+                [L10nKey.PolicySummarySampleMissing] = "No sample material set; using first material values.",
 
                 // Statistics
                 [L10nKey.Statistics] = "Statistics",
@@ -443,8 +451,12 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 [L10nKey.Policy] = "ポリシー",
                 [L10nKey.UnresolvedDiffPolicy] = "未解決diff処理",
                 [L10nKey.UnresolvedDiffPolicyTooltip] = "解決していないスカラー/カラー差分の処理。",
+                [L10nKey.SampleMaterial] = "サンプルマテリアル",
+                [L10nKey.SampleMaterialTooltip] = "未解決の差分に使用するサンプルマテリアル。",
                 [L10nKey.PolicySummaryStop] = "未解決の差分があればそのプランをスキップします。",
                 [L10nKey.PolicySummaryProceed] = "未解決の差分は最初のマテリアル値を使用します。",
+                [L10nKey.PolicySummarySample] = "未解決の差分はサンプルマテリアルの値を使用します。",
+                [L10nKey.PolicySummarySampleMissing] = "サンプルマテリアルがないため最初のマテリアル値を使用します。",
 
                 // Statistics
                 [L10nKey.Statistics] = "統計",

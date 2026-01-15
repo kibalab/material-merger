@@ -142,10 +142,38 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                 Localization.Get(L10nKey.UnresolvedDiffPolicyTooltip));
             state.diffPolicy = (DiffPolicy)EditorGUILayout.EnumPopup(policyContent, state.diffPolicy);
 
-            var policySummary = state.diffPolicy == DiffPolicy.미해결이면중단
-                ? Localization.Get(L10nKey.PolicySummaryStop)
-                : Localization.Get(L10nKey.PolicySummaryProceed);
-            EditorGUILayout.HelpBox(policySummary, MessageType.None);
+            if (state.diffPolicy == DiffPolicy.샘플머테리얼기준으로진행)
+            {
+                var sampleContent = new GUIContent(Localization.Get(L10nKey.SampleMaterial),
+                    Localization.Get(L10nKey.SampleMaterialTooltip));
+                state.diffSampleMaterial = (Material)EditorGUILayout.ObjectField(sampleContent,
+                    state.diffSampleMaterial, typeof(Material), false);
+            }
+
+            string policySummary;
+            var policyType = MessageType.None;
+            if (state.diffPolicy == DiffPolicy.미해결이면중단)
+            {
+                policySummary = Localization.Get(L10nKey.PolicySummaryStop);
+            }
+            else if (state.diffPolicy == DiffPolicy.샘플머테리얼기준으로진행)
+            {
+                if (state.diffSampleMaterial)
+                {
+                    policySummary = Localization.Get(L10nKey.PolicySummarySample);
+                }
+                else
+                {
+                    policySummary = Localization.Get(L10nKey.PolicySummarySampleMissing);
+                    policyType = MessageType.Warning;
+                }
+            }
+            else
+            {
+                policySummary = Localization.Get(L10nKey.PolicySummaryProceed);
+            }
+
+            EditorGUILayout.HelpBox(policySummary, policyType);
         }
     }
 }

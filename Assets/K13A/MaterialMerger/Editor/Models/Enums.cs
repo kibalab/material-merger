@@ -4,7 +4,8 @@ namespace K13A.MaterialMerger.Editor.Models
     public enum DiffPolicy
     {
         미해결이면중단,
-        첫번째기준으로진행
+        첫번째기준으로진행,
+        샘플머테리얼기준으로진행
     }
 
     public enum BakeMode
