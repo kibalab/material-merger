@@ -68,18 +68,18 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                     var c = GUI.color;
                     GUI.color = new Color(0.7f, 0.7f, 0.7f);
                     Utilities.GUIUtility.DrawPill(Localization.Get(L10nKey.SingleMaterial), false,
-                        Styles.stPill, Styles.stPillWarn, "Only one material in this plan. Merging is not needed.");
+                        Styles.stPill, Styles.stPillWarn, Localization.Get(L10nKey.SingleMaterialTooltip));
                     GUI.color = c;
                 }
                 else
                 {
                     Utilities.GUIUtility.DrawPill(Localization.Get(L10nKey.Page, g.pageCount), false,
-                        Styles.stPill, Styles.stPillWarn, "Number of atlas pages that will be generated for this plan.");
+                        Styles.stPill, Styles.stPillWarn, Localization.Get(L10nKey.PageTooltip));
                 }
 
                 if (g.skippedMultiMat > 0)
                     Utilities.GUIUtility.DrawPill(Localization.Get(L10nKey.Skip, g.skippedMultiMat), true,
-                        Styles.stPill, Styles.stPillWarn, "Renderers using multiple materials in this plan.");
+                        Styles.stPill, Styles.stPillWarn, Localization.Get(L10nKey.MultiMatTooltip));
             }
         }
 
@@ -95,19 +95,19 @@ namespace K13A.MaterialMerger.Editor.UI.Components
 
                 var relevantContent = Utilities.GUIUtility.MakeIconContent(
                     Localization.Get(L10nKey.RelevantOnly), "FilterByLabel", "d_FilterByLabel",
-                    "Show only properties that differ or are enabled.");
+                    Localization.Get(L10nKey.FilterRelevantTooltip));
                 g.onlyRelevant = GUILayout.Toggle(g.onlyRelevant, relevantContent,
                     Styles.stToolbarBtn, GUILayout.Width(100), GUILayout.Height(lineHeight));
 
                 var texturesContent = Utilities.GUIUtility.MakeIconContent(
                     Localization.Get(L10nKey.TexturesOnly), "Texture Icon", "d_Texture Icon",
-                    "Show only texture (TexEnv) properties.");
+                    Localization.Get(L10nKey.FilterTexturesTooltip));
                 g.showTexturesOnly = GUILayout.Toggle(g.showTexturesOnly, texturesContent,
                     Styles.stToolbarBtn, GUILayout.Width(110), GUILayout.Height(lineHeight));
 
                 var scalarsContent = Utilities.GUIUtility.MakeIconContent(
                     Localization.Get(L10nKey.ScalarsOnly), "ScaleTool", "d_ScaleTool",
-                    "Show only scalar/color/vector properties.");
+                    Localization.Get(L10nKey.FilterScalarsTooltip));
                 g.showScalarsOnly = GUILayout.Toggle(g.showScalarsOnly, scalarsContent,
                     Styles.stToolbarBtn, GUILayout.Width(100), GUILayout.Height(lineHeight));
 
@@ -131,7 +131,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             using (new EditorGUILayout.HorizontalScope())
             {
                 var label = new GUIContent(Localization.Get(L10nKey.OutputMaterialName),
-                    "Name used for merged material assets in this plan.");
+                    Localization.Get(L10nKey.OutputMaterialNameTooltip));
                 GUILayout.Label(label, EditorStyles.label, GUILayout.Width(180));
                 g.outputMaterialName = EditorGUILayout.TextField(g.outputMaterialName, GUILayout.MinWidth(140));
             }

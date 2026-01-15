@@ -16,24 +16,47 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
         public const string LastScan = "top.last_scan";
         public const string OutputFolder = "top.output_folder";
         public const string NoScan = "top.no_scan";
+        public const string ScanTooltip = "top.scan_tooltip";
+        public const string BuildAndApplyTooltip = "top.build_and_apply_tooltip";
+        public const string RootTooltip = "top.root_tooltip";
+        public const string LastScanTooltip = "top.last_scan_tooltip";
+        public const string OutputFolderTooltip = "top.output_folder_tooltip";
+        public const string LanguageTooltip = "top.language_tooltip";
 
         // Global Settings
         public const string MaterialGroupingRules = "global.material_grouping_rules";
         public const string GroupByKeywords = "global.group_by_keywords";
         public const string GroupByRenderQueue = "global.group_by_renderqueue";
         public const string SplitOpaqueTransparent = "global.split_opaque_transparent";
+        public const string GroupByKeywordsTooltip = "global.group_by_keywords_tooltip";
+        public const string GroupByRenderQueueTooltip = "global.group_by_renderqueue_tooltip";
+        public const string SplitOpaqueTransparentTooltip = "global.split_opaque_transparent_tooltip";
+        public const string GroupingShader = "global.grouping_shader";
+        public const string GroupingSummary = "global.grouping_summary";
 
         public const string ApplicationMethod = "global.application_method";
         public const string CloneRootOnApply = "global.clone_root_on_apply";
         public const string DeactivateOriginalRoot = "global.deactivate_original_root";
+        public const string CloneRootOnApplyTooltip = "global.clone_root_on_apply_tooltip";
+        public const string DeactivateOriginalRootTooltip = "global.deactivate_original_root_tooltip";
+        public const string ApplySummaryCloneDeactivate = "global.apply_summary_clone_deactivate";
+        public const string ApplySummaryCloneKeep = "global.apply_summary_clone_keep";
+        public const string ApplySummaryDirect = "global.apply_summary_direct";
 
         public const string Atlas = "global.atlas";
         public const string AtlasSize = "global.atlas_size";
         public const string Grid = "global.grid";
         public const string Padding = "global.padding";
+        public const string AtlasSizeTooltip = "global.atlas_size_tooltip";
+        public const string GridTooltip = "global.grid_tooltip";
+        public const string PaddingTooltip = "global.padding_tooltip";
+        public const string AtlasSummary = "global.atlas_summary";
 
         public const string Policy = "global.policy";
         public const string UnresolvedDiffPolicy = "global.unresolved_diff_policy";
+        public const string UnresolvedDiffPolicyTooltip = "global.unresolved_diff_policy_tooltip";
+        public const string PolicySummaryStop = "global.policy_summary_stop";
+        public const string PolicySummaryProceed = "global.policy_summary_proceed";
 
         // Statistics
         public const string Statistics = "stats.statistics";
@@ -50,6 +73,10 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
         public const string CollapseAll = "grouplist.collapse_all";
         public const string EnableAll = "grouplist.enable_all";
         public const string DisableAll = "grouplist.disable_all";
+        public const string ExpandAllTooltip = "grouplist.expand_all_tooltip";
+        public const string CollapseAllTooltip = "grouplist.collapse_all_tooltip";
+        public const string EnableAllTooltip = "grouplist.enable_all_tooltip";
+        public const string DisableAllTooltip = "grouplist.disable_all_tooltip";
 
         public const string NoScanMessage = "grouplist.no_scan_message";
 
@@ -64,6 +91,13 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
         public const string EnableAllTextureAtlas = "group.enable_all_texture_atlas";
         public const string DisableAllTextureAtlas = "group.disable_all_texture_atlas";
         public const string OutputMaterialName = "group.output_material_name";
+        public const string SingleMaterialTooltip = "group.single_material_tooltip";
+        public const string PageTooltip = "group.page_tooltip";
+        public const string MultiMatTooltip = "group.multimat_tooltip";
+        public const string FilterRelevantTooltip = "group.filter_relevant_tooltip";
+        public const string FilterTexturesTooltip = "group.filter_textures_tooltip";
+        public const string FilterScalarsTooltip = "group.filter_scalars_tooltip";
+        public const string OutputMaterialNameTooltip = "group.output_material_name_tooltip";
 
         // Property Table
         public const string Property = "table.property";

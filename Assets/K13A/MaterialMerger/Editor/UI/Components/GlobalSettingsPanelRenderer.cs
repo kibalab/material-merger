@@ -45,24 +45,24 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             using (new EditorGUILayout.HorizontalScope())
             {
                 var keywordsContent = new GUIContent(Localization.Get(L10nKey.GroupByKeywords),
-                    "Split plans by shader keywords (different keyword sets are separated).");
+                    Localization.Get(L10nKey.GroupByKeywordsTooltip));
                 state.groupByKeywords = EditorGUILayout.ToggleLeft(keywordsContent,
                     state.groupByKeywords, GUILayout.Width(130));
                 var queueContent = new GUIContent(Localization.Get(L10nKey.GroupByRenderQueue),
-                    "Split plans by RenderQueue value.");
+                    Localization.Get(L10nKey.GroupByRenderQueueTooltip));
                 state.groupByRenderQueue = EditorGUILayout.ToggleLeft(queueContent,
                     state.groupByRenderQueue, GUILayout.Width(150));
                 var opaqueContent = new GUIContent(Localization.Get(L10nKey.SplitOpaqueTransparent),
-                    "Separate opaque and transparent materials into different plans.");
+                    Localization.Get(L10nKey.SplitOpaqueTransparentTooltip));
                 state.splitOpaqueTransparent = EditorGUILayout.ToggleLeft(opaqueContent,
                     state.splitOpaqueTransparent, GUILayout.Width(150));
             }
 
-            var groupingParts = new List<string> { "Shader" };
-            if (state.groupByKeywords) groupingParts.Add("Keywords");
-            if (state.groupByRenderQueue) groupingParts.Add("RenderQueue");
-            if (state.splitOpaqueTransparent) groupingParts.Add("Opaque/Transparent");
-            var groupingSummary = "Current grouping: " + string.Join(" + ", groupingParts) + ".";
+            var groupingParts = new List<string> { Localization.Get(L10nKey.GroupingShader) };
+            if (state.groupByKeywords) groupingParts.Add(Localization.Get(L10nKey.GroupByKeywords));
+            if (state.groupByRenderQueue) groupingParts.Add(Localization.Get(L10nKey.GroupByRenderQueue));
+            if (state.splitOpaqueTransparent) groupingParts.Add(Localization.Get(L10nKey.SplitOpaqueTransparent));
+            var groupingSummary = Localization.Get(L10nKey.GroupingSummary, string.Join(" + ", groupingParts));
             EditorGUILayout.HelpBox(groupingSummary, MessageType.None);
         }
 
@@ -75,13 +75,13 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             using (new EditorGUILayout.HorizontalScope())
             {
                 var cloneContent = new GUIContent(Localization.Get(L10nKey.CloneRootOnApply),
-                    "Apply changes to a cloned root so the original is preserved.");
+                    Localization.Get(L10nKey.CloneRootOnApplyTooltip));
                 state.cloneRootOnApply = EditorGUILayout.ToggleLeft(cloneContent,
                     state.cloneRootOnApply, GUILayout.Width(150));
                 using (new EditorGUI.DisabledScope(!state.cloneRootOnApply))
                 {
                     var deactivateContent = new GUIContent(Localization.Get(L10nKey.DeactivateOriginalRoot),
-                        "Deactivate the original root after cloning.");
+                        Localization.Get(L10nKey.DeactivateOriginalRootTooltip));
                     state.deactivateOriginalRoot = EditorGUILayout.ToggleLeft(deactivateContent,
                         state.deactivateOriginalRoot, GUILayout.Width(160));
                 }
@@ -91,12 +91,12 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             if (state.cloneRootOnApply)
             {
                 applySummary = state.deactivateOriginalRoot
-                    ? "Apply will create a cloned root and deactivate the original."
-                    : "Apply will create a cloned root and keep the original active.";
+                    ? Localization.Get(L10nKey.ApplySummaryCloneDeactivate)
+                    : Localization.Get(L10nKey.ApplySummaryCloneKeep);
             }
             else
             {
-                applySummary = "Apply writes directly to the selected root (no clone).";
+                applySummary = Localization.Get(L10nKey.ApplySummaryDirect);
             }
             EditorGUILayout.HelpBox(applySummary, MessageType.None);
         }
@@ -110,25 +110,25 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             using (new EditorGUILayout.HorizontalScope())
             {
                 var atlasContent = new GUIContent(Localization.Get(L10nKey.AtlasSize),
-                    "Final atlas texture size per page.");
+                    Localization.Get(L10nKey.AtlasSizeTooltip));
                 state.atlasSize = EditorGUILayout.IntPopup(atlasContent, state.atlasSize,
                     new[] { new GUIContent("4096"), new GUIContent("8192") }, new[] { 4096, 8192 }, GUILayout.Width(220));
                 var gridContent = new GUIContent(Localization.Get(L10nKey.Grid),
-                    "Tiles per row/column (grid x grid = tiles per page).");
+                    Localization.Get(L10nKey.GridTooltip));
                 state.grid = EditorGUILayout.IntPopup(gridContent, state.grid,
                     new[] { new GUIContent("2"), new GUIContent("4") }, new[] { 2, 4 }, GUILayout.Width(200));
                 GUILayout.FlexibleSpace();
             }
 
             var paddingContent = new GUIContent(Localization.Get(L10nKey.Padding),
-                "Padding around each tile to reduce texture bleeding.");
+                Localization.Get(L10nKey.PaddingTooltip));
             state.paddingPx = EditorGUILayout.IntSlider(paddingContent, state.paddingPx, 0, 64);
 
             int tilesPerPage = Mathf.Max(1, state.grid * state.grid);
             int cell = Mathf.Max(1, state.atlasSize / Mathf.Max(1, state.grid));
             int content = cell - state.paddingPx * 2;
             if (content <= 0) content = cell;
-            var atlasSummary = $"Tiles per page: {tilesPerPage}. Tile size: {cell}px, content: {content}px.";
+            var atlasSummary = Localization.Get(L10nKey.AtlasSummary, tilesPerPage, cell, content);
             EditorGUILayout.HelpBox(atlasSummary, MessageType.None);
         }
 
@@ -139,12 +139,12 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         {
             Utilities.GUIUtility.DrawSection(Localization.Get(L10nKey.Policy), Styles.stSection);
             var policyContent = new GUIContent(Localization.Get(L10nKey.UnresolvedDiffPolicy),
-                "How to handle unresolved scalar/color differences.");
+                Localization.Get(L10nKey.UnresolvedDiffPolicyTooltip));
             state.diffPolicy = (DiffPolicy)EditorGUILayout.EnumPopup(policyContent, state.diffPolicy);
 
             var policySummary = state.diffPolicy == DiffPolicy.미해결이면중단
-                ? "Plans with unresolved scalar/color differences are skipped."
-                : "Plans with unresolved scalar/color differences use the first material's values.";
+                ? Localization.Get(L10nKey.PolicySummaryStop)
+                : Localization.Get(L10nKey.PolicySummaryProceed);
             EditorGUILayout.HelpBox(policySummary, MessageType.None);
         }
     }
