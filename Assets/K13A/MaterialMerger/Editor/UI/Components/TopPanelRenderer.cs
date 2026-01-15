@@ -15,6 +15,13 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         public MaterialMergerStyles Styles { get; set; }
         public ILocalizationService Localization { get; set; }
 
+        private const string LogoResourceName = "logo";
+        private const float LogoHeight = 52f;
+        private const float LogoMinWidth = 80f;
+        private const float LogoMaxWidth = 300f;
+        private Texture2D logoTexture;
+        private bool logoSearched;
+
         /// <summary>
         /// 최상단 패널 렌더링
         /// </summary>
@@ -45,7 +52,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         {
             using (new EditorGUILayout.HorizontalScope())
             {
-                GUILayout.Label(Localization.Get(L10nKey.WindowTitle), Styles.stTitle);
+                DrawLogoOrTitle();
                 GUILayout.FlexibleSpace();
 
                 using (new EditorGUI.DisabledScope(!state.root))
@@ -68,6 +75,57 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                         onBuildClicked?.Invoke();
                 }
             }
+        }
+
+        private void DrawLogoOrTitle()
+        {
+            var logo = GetLogoTexture();
+            if (logo)
+            {
+                float aspect = logo.height > 0 ? (float)logo.width / logo.height : 1f;
+                float width = Mathf.Clamp(LogoHeight * aspect, LogoMinWidth, LogoMaxWidth);
+                var rect = GUILayoutUtility.GetRect(width, LogoHeight, GUILayout.Width(width), GUILayout.Height(LogoHeight));
+                GUI.DrawTexture(rect, logo, ScaleMode.ScaleToFit, true);
+                return;
+            }
+
+            GUILayout.Label(Localization.Get(L10nKey.WindowTitle), Styles.stTitle);
+        }
+
+        private Texture2D GetLogoTexture()
+        {
+            if (logoTexture) return logoTexture;
+
+            if (!logoSearched)
+            {
+                logoSearched = true;
+                logoTexture = FindLogoTextureInProject();
+            }
+
+            return logoTexture;
+        }
+
+        private Texture2D FindLogoTextureInProject()
+        {
+            var guids = AssetDatabase.FindAssets("logo t:Texture2D");
+            for (int i = 0; i < guids.Length; i++)
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                if (string.IsNullOrEmpty(path)) continue;
+                if (path.IndexOf("/Resources/", StringComparison.OrdinalIgnoreCase) < 0) continue;
+                var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                if (tex) return tex;
+            }
+
+            for (int i = 0; i < guids.Length; i++)
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                if (string.IsNullOrEmpty(path)) continue;
+                var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                if (tex) return tex;
+            }
+
+            return null;
         }
 
         /// <summary>
