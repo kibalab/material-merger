@@ -27,6 +27,8 @@ namespace K13A.MaterialMerger.Editor.Core
         // 스타일 상태
         private bool stylesReady;
         private bool lastProSkin;
+        private Texture2D tagBg;
+        private Texture2D tagWarnBg;
 
         // 상수
         public const float TopLabelWidth = 90f;
@@ -75,9 +77,31 @@ namespace K13A.MaterialMerger.Editor.Core
                 ? new Color(1f, 0.78f, 0.35f, 1f)
                 : new Color(0.75f, 0.45f, 0.05f, 1f);
 
-            stPill = new GUIStyle(EditorStyles.miniButton);
+            if (tagBg) Object.DestroyImmediate(tagBg);
+            if (tagWarnBg) Object.DestroyImmediate(tagWarnBg);
+
+            tagBg = CreateSolidTexture(EditorGUIUtility.isProSkin
+                ? new Color(1f, 1f, 1f, 0.08f)
+                : new Color(0f, 0f, 0f, 0.08f));
+            tagWarnBg = CreateSolidTexture(EditorGUIUtility.isProSkin
+                ? new Color(1f, 0.6f, 0.1f, 0.2f)
+                : new Color(1f, 0.6f, 0.1f, 0.18f));
+
+            stPill = new GUIStyle(EditorStyles.miniLabel);
+            stPill.alignment = TextAnchor.MiddleCenter;
             stPill.padding = new RectOffset(8, 8, 2, 2);
+            stPill.margin = new RectOffset(4, 4, 2, 2);
+            stPill.fixedHeight = 18;
+            stPill.normal.background = tagBg;
+            stPill.normal.textColor = EditorGUIUtility.isProSkin
+                ? new Color(0.86f, 0.86f, 0.86f, 1f)
+                : new Color(0.2f, 0.2f, 0.2f, 1f);
+
             stPillWarn = new GUIStyle(stPill);
+            stPillWarn.normal.background = tagWarnBg;
+            stPillWarn.normal.textColor = EditorGUIUtility.isProSkin
+                ? new Color(1f, 0.85f, 0.45f, 1f)
+                : new Color(0.55f, 0.25f, 0.02f, 1f);
 
             stToolbar = new GUIStyle(EditorStyles.toolbar);
 
@@ -95,6 +119,15 @@ namespace K13A.MaterialMerger.Editor.Core
             stBigBtn.fontStyle = FontStyle.Bold;
 
             stylesReady = true;
+        }
+
+        private Texture2D CreateSolidTexture(Color color)
+        {
+            var tex = new Texture2D(1, 1, TextureFormat.RGBA32, false);
+            tex.hideFlags = HideFlags.HideAndDontSave;
+            tex.SetPixel(0, 0, color);
+            tex.Apply();
+            return tex;
         }
     }
 }

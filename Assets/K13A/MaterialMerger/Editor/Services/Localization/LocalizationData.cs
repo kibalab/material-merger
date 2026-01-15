@@ -71,7 +71,7 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 // Group Panel
                 [L10nKey.Material] = "머티리얼",
                 [L10nKey.Page] = "페이지",
-                [L10nKey.Skip] = "스킵",
+                [L10nKey.Skip] = "MultiMat {0}",
                 [L10nKey.SingleMaterial] = "단일(병합불필요)",
                 [L10nKey.RelevantOnly] = "관련만",
                 [L10nKey.TexturesOnly] = "텍스처만",
@@ -222,7 +222,7 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 // Group Panel
                 [L10nKey.Material] = "Material",
                 [L10nKey.Page] = "Page",
-                [L10nKey.Skip] = "Skip",
+                [L10nKey.Skip] = "MultiMat {0}",
                 [L10nKey.SingleMaterial] = "Single(No merge needed)",
                 [L10nKey.RelevantOnly] = "Relevant",
                 [L10nKey.TexturesOnly] = "Textures",
@@ -373,7 +373,7 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 // Group Panel
                 [L10nKey.Material] = "マテリアル",
                 [L10nKey.Page] = "ページ",
-                [L10nKey.Skip] = "スキップ",
+                [L10nKey.Skip] = "MultiMat {0}",
                 [L10nKey.SingleMaterial] = "単一(マージ不要)",
                 [L10nKey.RelevantOnly] = "関連のみ",
                 [L10nKey.TexturesOnly] = "テクスチャのみ",
