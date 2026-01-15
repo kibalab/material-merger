@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using K13A.MaterialMerger.Editor.Core;
 using K13A.MaterialMerger.Editor.Models;
+using K13A.MaterialMerger.Editor.Services.Localization;
 
 namespace K13A.MaterialMerger.Editor.UI.Components
 {
@@ -14,6 +15,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
     {
         public MaterialMergerStyles Styles { get; set; }
         public PropertyRowRenderer RowRenderer { get; set; }
+        public ILocalizationService Localization { get; set; }
 
         /// <summary>
         /// 프로퍼티 테이블 렌더링 (헤더 + 필터링된 행들)
@@ -33,7 +35,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             if (visible == 0)
             {
                 EditorGUILayout.Space(8);
-                EditorGUILayout.HelpBox("필터 조건에 맞는 프로퍼티가 없습니다.", MessageType.Info);
+                EditorGUILayout.HelpBox(Localization.Get(L10nKey.NoPropertiesMatch), MessageType.Info);
             }
         }
 
@@ -57,11 +59,11 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             }
 
             GUI.Label(CenterRect(cols.check, lineHeight), "", Styles.stMini);
-            GUI.Label(CenterRect(cols.name, lineHeight), "프로퍼티", Styles.stMini);
-            GUI.Label(CenterRect(cols.type, lineHeight), "타입", Styles.stMini);
-            GUI.Label(CenterRect(cols.action, lineHeight), "액션", Styles.stMini);
-            GUI.Label(CenterRect(cols.target, lineHeight), "대상", Styles.stMini);
-            GUI.Label(CenterRect(cols.info, lineHeight), "정보", Styles.stMini);
+            GUI.Label(CenterRect(cols.name, lineHeight), Localization.Get(L10nKey.Property), Styles.stMini);
+            GUI.Label(CenterRect(cols.type, lineHeight), Localization.Get(L10nKey.Type), Styles.stMini);
+            GUI.Label(CenterRect(cols.action, lineHeight), Localization.Get(L10nKey.Action), Styles.stMini);
+            GUI.Label(CenterRect(cols.target, lineHeight), Localization.Get(L10nKey.Target), Styles.stMini);
+            GUI.Label(CenterRect(cols.info, lineHeight), Localization.Get(L10nKey.Info), Styles.stMini);
 
             var line = new Rect(rect.x + 6, rect.yMax - 1, rect.width - 12, 1);
             EditorGUI.DrawRect(line, EditorGUIUtility.isProSkin

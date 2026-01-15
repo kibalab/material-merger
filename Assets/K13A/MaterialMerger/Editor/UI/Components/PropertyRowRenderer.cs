@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using K13A.MaterialMerger.Editor.Core;
 using K13A.MaterialMerger.Editor.Models;
+using K13A.MaterialMerger.Editor.Services.Localization;
 
 namespace K13A.MaterialMerger.Editor.UI.Components
 {
@@ -15,6 +16,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
     public class PropertyRowRenderer
     {
         public MaterialMergerStyles Styles { get; set; }
+        public ILocalizationService Localization { get; set; }
 
         /// <summary>
         /// 프로퍼티 행의 높이 계산
@@ -104,14 +106,14 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         private void DrawTextureRow(Row row, ColumnLayout cols, float lineHeight, Rect rect)
         {
             using (new EditorGUI.DisabledScope(!row.doAction))
-                EditorGUI.LabelField(CenterRect(cols.action, lineHeight), "텍스처 아틀라스", Styles.stMiniDim);
+                EditorGUI.LabelField(CenterRect(cols.action, lineHeight), Localization.Get(L10nKey.TextureAtlas), Styles.stMiniDim);
 
             EditorGUI.LabelField(CenterRect(cols.target, lineHeight),
-                row.isNormalLike ? "노말맵" : (row.isSRGB ? "sRGB" : "Linear"),
+                row.isNormalLike ? Localization.Get(L10nKey.NormalMap) : (row.isSRGB ? Localization.Get(L10nKey.SRGB) : Localization.Get(L10nKey.Linear)),
                 Styles.stMiniDim);
 
             DrawRowRightInfoAndMore(row, cols.info,
-                row.texNonNull > 0 ? $"tex:{row.texDistinct} ST:{row.stDistinct}" : "비어있음",
+                row.texNonNull > 0 ? $"tex:{row.texDistinct} ST:{row.stDistinct}" : Localization.Get(L10nKey.Empty),
                 row.texNonNull == 0);
 
             if (row.expanded)
@@ -124,7 +126,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
 
             if (!row.doAction)
             {
-                EditorGUI.LabelField(CenterRect(cols.action, lineHeight), "미적용", Styles.stMiniDim);
+                EditorGUI.LabelField(CenterRect(cols.action, lineHeight), Localization.Get(L10nKey.NotApplied), Styles.stMiniDim);
                 EditorGUI.LabelField(CenterRect(cols.target, lineHeight), "-", Styles.stMiniDim);
             }
             else
@@ -163,7 +165,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                         }
                         else
                         {
-                            EditorGUI.LabelField(CenterRect(cols.target, lineHeight), "(TexEnv 없음)",
+                            EditorGUI.LabelField(CenterRect(cols.target, lineHeight), Localization.Get(L10nKey.NoTexEnv),
                                 Styles.stMiniWarn);
                             row.targetTexProp = "";
                         }
@@ -176,7 +178,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             }
 
             var unresolved = differs && !row.doAction;
-            DrawRowRightInfoAndMore(row, cols.info, differs ? $"diff:{row.distinctCount}" : "동일", unresolved);
+            DrawRowRightInfoAndMore(row, cols.info, differs ? $"diff:{row.distinctCount}" : Localization.Get(L10nKey.Same), unresolved);
 
             if (row.expanded)
                 DrawRowExpanded_NonTex(g, row, rect);
@@ -186,7 +188,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         {
             float lineHeight = EditorGUIUtility.singleLineHeight;
             var btn = CenterRect(new Rect(infoRect.x, infoRect.y, 54, infoRect.height), lineHeight);
-            if (GUI.Button(btn, row.expanded ? "접기" : "더보기", Styles.stRowMoreBtn))
+            if (GUI.Button(btn, row.expanded ? Localization.Get(L10nKey.Collapse) : Localization.Get(L10nKey.ShowMore), Styles.stRowMoreBtn))
                 row.expanded = !row.expanded;
 
             var txt = CenterRect(new Rect(infoRect.x + 60, infoRect.y, infoRect.width - 60, infoRect.height),
@@ -206,20 +208,20 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             GUI.BeginGroup(area);
 
             float y = 0;
-            GUI.Label(new Rect(0, y, area.width, 18), "텍스처 아틀라싱", Styles.stSubTitle);
+            GUI.Label(new Rect(0, y, area.width, 18), Localization.Get(L10nKey.TextureAtlasing), Styles.stSubTitle);
             y += 20;
 
             if (!row.doAction)
             {
-                GUI.Label(new Rect(0, y, area.width, 18), "체크박스를 켜면 이 프로퍼티를 아틀라스에 포함합니다.",
+                GUI.Label(new Rect(0, y, area.width, 18), Localization.Get(L10nKey.EnableCheckboxToInclude),
                     Styles.stMiniDim);
                 GUI.EndGroup();
                 return;
             }
 
-            GUI.Label(new Rect(0, y, area.width, 18), "이 텍스처 프로퍼티를 아틀라스에 포함합니다.", Styles.stMiniDim);
+            GUI.Label(new Rect(0, y, area.width, 18), Localization.Get(L10nKey.TextureWillBeIncluded), Styles.stMiniDim);
             y += 18;
-            GUI.Label(new Rect(0, y, area.width, 18), "노말/마스크 계열은 색공간이 자동 추정됩니다.", Styles.stMiniDim);
+            GUI.Label(new Rect(0, y, area.width, 18), Localization.Get(L10nKey.ColorSpaceAutoDetected), Styles.stMiniDim);
 
             GUI.EndGroup();
         }
@@ -233,19 +235,19 @@ namespace K13A.MaterialMerger.Editor.UI.Components
 
             if (!row.doAction)
             {
-                GUI.Label(new Rect(0, y, area.width, 18), "체크박스를 켜면 이 프로퍼티에 액션을 적용합니다.",
+                GUI.Label(new Rect(0, y, area.width, 18), Localization.Get(L10nKey.EnableCheckboxToApply),
                     Styles.stMiniDim);
                 GUI.EndGroup();
                 return;
             }
 
             row.resetSourceAfterBake = GUI.Toggle(new Rect(0, y, 260, 18), row.resetSourceAfterBake,
-                "굽기/곱 적용 후 원본 프로퍼티 리셋");
+                Localization.Get(L10nKey.ResetAfterBake));
             y += 20;
 
             if (row.type == ShaderUtil.ShaderPropertyType.Color)
             {
-                row.includeAlpha = GUI.Toggle(new Rect(0, y, 220, 18), row.includeAlpha, "알파 포함(기본 꺼짐)");
+                row.includeAlpha = GUI.Toggle(new Rect(0, y, 220, 18), row.includeAlpha, Localization.Get(L10nKey.IncludeAlpha));
                 y += 20;
             }
 
@@ -256,13 +258,13 @@ namespace K13A.MaterialMerger.Editor.UI.Components
 
             if (needsTarget)
             {
-                GUI.Label(new Rect(0, y, area.width, 18), "모디파이어(옵션): 다른 float 프로퍼티로 곱/가산/감산",
+                GUI.Label(new Rect(0, y, area.width, 18), Localization.Get(L10nKey.ModifierOptional),
                     Styles.stMiniDim);
                 y += 18;
 
                 row.modOp = (ModOp)EditorGUI.EnumPopup(new Rect(0, y, 160, 18), row.modOp);
 
-                var modList = new List<string> { "(없음)" };
+                var modList = new List<string> { Localization.Get(L10nKey.None) };
                 modList.AddRange(g.shaderScalarProps);
 
                 row.modPropIndex = Mathf.Clamp(row.modPropIndex, 0, modList.Count - 1);
@@ -270,17 +272,17 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                 row.modProp = row.modPropIndex == 0 ? "" : modList[row.modPropIndex];
                 y += 20;
 
-                row.modClamp01 = GUI.Toggle(new Rect(0, y, 90, 18), row.modClamp01, "Clamp01");
+                row.modClamp01 = GUI.Toggle(new Rect(0, y, 90, 18), row.modClamp01, Localization.Get(L10nKey.Clamp01));
                 row.modScale = EditorGUI.FloatField(new Rect(100, y, 140, 18), row.modScale);
                 row.modBias = EditorGUI.FloatField(new Rect(250, y, 140, 18), row.modBias);
                 y += 20;
 
                 if (row.type == ShaderUtil.ShaderPropertyType.Color)
-                    row.modAffectsAlpha = GUI.Toggle(new Rect(0, y, 140, 18), row.modAffectsAlpha, "알파에도 적용");
+                    row.modAffectsAlpha = GUI.Toggle(new Rect(0, y, 140, 18), row.modAffectsAlpha, Localization.Get(L10nKey.ApplyToAlpha));
             }
             else
             {
-                GUI.Label(new Rect(0, y, area.width, 18), "굽기/곱 액션 선택 시 추가 옵션이 활성화됩니다.",
+                GUI.Label(new Rect(0, y, area.width, 18), Localization.Get(L10nKey.BakeOptionsWhenSelected),
                     Styles.stMiniDim);
             }
 
@@ -290,11 +292,11 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         // 헬퍼 메서드들
         private string TypeLabel(ShaderUtil.ShaderPropertyType t)
         {
-            if (t == ShaderUtil.ShaderPropertyType.TexEnv) return "텍스처";
-            if (t == ShaderUtil.ShaderPropertyType.Color) return "색상";
-            if (t == ShaderUtil.ShaderPropertyType.Range) return "Range";
-            if (t == ShaderUtil.ShaderPropertyType.Float) return "Float";
-            if (t == ShaderUtil.ShaderPropertyType.Vector) return "Vector";
+            if (t == ShaderUtil.ShaderPropertyType.TexEnv) return Localization.Get(L10nKey.Texture);
+            if (t == ShaderUtil.ShaderPropertyType.Color) return Localization.Get(L10nKey.Color);
+            if (t == ShaderUtil.ShaderPropertyType.Range) return Localization.Get(L10nKey.Range);
+            if (t == ShaderUtil.ShaderPropertyType.Float) return Localization.Get(L10nKey.Float);
+            if (t == ShaderUtil.ShaderPropertyType.Vector) return Localization.Get(L10nKey.Vector);
             return t.ToString();
         }
 
@@ -314,11 +316,11 @@ namespace K13A.MaterialMerger.Editor.UI.Components
 
         private string ModeLabel(BakeMode m)
         {
-            if (m == BakeMode.리셋_쉐이더기본값) return "리셋(쉐이더 기본값)";
-            if (m == BakeMode.색상굽기_텍스처타일) return "색상 굽기 → 텍스처";
-            if (m == BakeMode.스칼라굽기_그레이타일) return "스칼라 굽기 → 그레이";
-            if (m == BakeMode.색상곱_텍스처타일) return "색상 곱 → 텍스처";
-            if (m == BakeMode.유지) return "유지";
+            if (m == BakeMode.리셋_쉐이더기본값) return Localization.Get(L10nKey.BakeModeReset);
+            if (m == BakeMode.색상굽기_텍스처타일) return Localization.Get(L10nKey.BakeModeColorBake);
+            if (m == BakeMode.스칼라굽기_그레이타일) return Localization.Get(L10nKey.BakeModeScalarBake);
+            if (m == BakeMode.색상곱_텍스처타일) return Localization.Get(L10nKey.BakeModeColorMultiply);
+            if (m == BakeMode.유지) return Localization.Get(L10nKey.BakeModeKeep);
             return m.ToString();
         }
     }

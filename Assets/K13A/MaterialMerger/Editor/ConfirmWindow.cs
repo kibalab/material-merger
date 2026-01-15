@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using K13A.MaterialMerger.Editor.Services.Localization;
 
 namespace K13A.MaterialMerger.Editor
 {
@@ -22,13 +23,15 @@ namespace K13A.MaterialMerger.Editor
         dynamic owner;
         List<GroupInfo> groups;
         Vector2 scroll;
+        ILocalizationService localization;
 
-        public static void Open(dynamic owner, List<GroupInfo> groups)
+        public static void Open(dynamic owner, List<GroupInfo> groups, ILocalizationService localization)
         {
             var w = CreateInstance<ConfirmWindow>();
             w.owner = owner;
             w.groups = groups ?? new List<GroupInfo>();
-            w.titleContent = new GUIContent("빌드 확인");
+            w.localization = localization ?? new LocalizationService();
+            w.titleContent = new GUIContent(w.localization.Get(L10nKey.ConfirmTitle));
             w.minSize = new Vector2(680, 520);
             w.ShowUtility();
         }
@@ -37,8 +40,8 @@ namespace K13A.MaterialMerger.Editor
         {
             if (owner == null)
             {
-                EditorGUILayout.HelpBox("원본 창이 닫혀서 실행할 수 없습니다.", MessageType.Error);
-                if (GUILayout.Button("닫기", GUILayout.Height(28))) Close();
+                EditorGUILayout.HelpBox(localization.Get(L10nKey.RollbackOwnerClosed), MessageType.Error);
+                if (GUILayout.Button(localization.Get(L10nKey.Close), GUILayout.Height(28))) Close();
                 return;
             }
 
@@ -46,10 +49,10 @@ namespace K13A.MaterialMerger.Editor
             var skipCount = groups.Count - runCount;
 
             EditorGUILayout.Space(8);
-            EditorGUILayout.LabelField("아틀라스 빌드 & 적용 실행 전 확인", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(localization.Get(L10nKey.ConfirmHeader), EditorStyles.boldLabel);
             EditorGUILayout.Space(4);
 
-            EditorGUILayout.HelpBox($"실행 대상 Material Plan: {runCount} / 스킵: {skipCount}\n아래 프로퍼티 목록이 실제로 텍스처 아틀라싱/생성 대상입니다.", MessageType.Info);
+            EditorGUILayout.HelpBox(localization.Get(L10nKey.ConfirmMessage, runCount, skipCount), MessageType.Info);
 
             scroll = EditorGUILayout.BeginScrollView(scroll);
 
@@ -61,7 +64,7 @@ namespace K13A.MaterialMerger.Editor
                     {
                         EditorGUILayout.LabelField(g.title, EditorStyles.boldLabel);
                         GUILayout.FlexibleSpace();
-                        var st = g.willRun ? "실행" : "스킵";
+                        var st = g.willRun ? localization.Get(L10nKey.Run) : localization.Get(L10nKey.Skipped);
                         var c = GUI.color;
                         GUI.color = g.willRun ? new Color(0.7f, 1f, 0.7f) : new Color(1f, 0.85f, 0.55f);
                         GUILayout.Label(st, EditorStyles.miniButton, GUILayout.Width(64));
@@ -73,14 +76,14 @@ namespace K13A.MaterialMerger.Editor
 
                     EditorGUILayout.Space(2);
 
-                    EditorGUILayout.LabelField($"아틀라싱 포함 TexEnv ({g.atlasProps.Count})", EditorStyles.miniBoldLabel);
-                    if (g.atlasProps.Count == 0) EditorGUILayout.LabelField("(없음)", EditorStyles.miniLabel);
+                    EditorGUILayout.LabelField(localization.Get(L10nKey.AtlasIncludedTexEnv, g.atlasProps.Count), EditorStyles.miniBoldLabel);
+                    if (g.atlasProps.Count == 0) EditorGUILayout.LabelField(localization.Get(L10nKey.None), EditorStyles.miniLabel);
                     else EditorGUILayout.LabelField(string.Join(", ", g.atlasProps), EditorStyles.wordWrappedMiniLabel);
 
                     EditorGUILayout.Space(4);
 
-                    EditorGUILayout.LabelField($"텍스처 생성/타겟 TexEnv ({g.generatedProps.Count})", EditorStyles.miniBoldLabel);
-                    if (g.generatedProps.Count == 0) EditorGUILayout.LabelField("(없음)", EditorStyles.miniLabel);
+                    EditorGUILayout.LabelField(localization.Get(L10nKey.GeneratedTexEnv, g.generatedProps.Count), EditorStyles.miniBoldLabel);
+                    if (g.generatedProps.Count == 0) EditorGUILayout.LabelField(localization.Get(L10nKey.None), EditorStyles.miniLabel);
                     else EditorGUILayout.LabelField(string.Join(", ", g.generatedProps), EditorStyles.wordWrappedMiniLabel);
                 }
             }
@@ -91,7 +94,7 @@ namespace K13A.MaterialMerger.Editor
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (GUILayout.Button("취소", GUILayout.Height(32)))
+                if (GUILayout.Button(localization.Get(L10nKey.Cancel), GUILayout.Height(32)))
                 {
                     Close();
                     return;
@@ -99,7 +102,7 @@ namespace K13A.MaterialMerger.Editor
 
                 using (new EditorGUI.DisabledScope(runCount == 0))
                 {
-                    if (GUILayout.Button("실행", GUILayout.Height(32)))
+                    if (GUILayout.Button(localization.Get(L10nKey.Execute), GUILayout.Height(32)))
                     {
                         Close();
                         owner.BuildAndApply();

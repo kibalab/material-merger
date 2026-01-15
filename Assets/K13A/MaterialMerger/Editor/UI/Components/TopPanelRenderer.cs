@@ -3,6 +3,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
 using K13A.MaterialMerger.Editor.Core;
+using K13A.MaterialMerger.Editor.Services.Localization;
 
 namespace K13A.MaterialMerger.Editor.UI.Components
 {
@@ -12,6 +13,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
     public class TopPanelRenderer
     {
         public MaterialMergerStyles Styles { get; set; }
+        public ILocalizationService Localization { get; set; }
 
         /// <summary>
         /// 최상단 패널 렌더링
@@ -41,12 +43,13 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         {
             using (new EditorGUILayout.HorizontalScope())
             {
-                GUILayout.Label("멀티 아틀라스 머저", Styles.stTitle);
+                GUILayout.Label(Localization.Get(L10nKey.WindowTitle), Styles.stTitle);
                 GUILayout.FlexibleSpace();
 
                 using (new EditorGUI.DisabledScope(!state.root))
                 {
-                    var scanContent = Utilities.GUIUtility.MakeIconContent("스캔", "Refresh", "d_Refresh", "스캔");
+                    var scanText = Localization.Get(L10nKey.Scan);
+                    var scanContent = Utilities.GUIUtility.MakeIconContent(scanText, "Refresh", "d_Refresh", scanText);
                     if (GUILayout.Button(scanContent, Styles.stBigBtn, GUILayout.Width(140), GUILayout.Height(32)))
                         onScanClicked?.Invoke();
                 }
@@ -54,8 +57,8 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                 using (new EditorGUI.DisabledScope(state.scans == null || state.scans.Count == 0 ||
                                                      (state.cloneRootOnApply && !state.root)))
                 {
-                    var buildContent = Utilities.GUIUtility.MakeIconContent("빌드 & 적용", "PlayButton", "d_PlayButton",
-                        "빌드 & 적용");
+                    var buildText = Localization.Get(L10nKey.BuildAndApply);
+                    var buildContent = Utilities.GUIUtility.MakeIconContent(buildText, "PlayButton", "d_PlayButton", buildText);
                     if (GUILayout.Button(buildContent, Styles.stBigBtn, GUILayout.Width(180),
                             GUILayout.Height(32)))
                         onBuildClicked?.Invoke();
@@ -74,7 +77,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             var rootFieldRect = new Rect(rootLabelRect.xMax + 6, rootRect.y,
                 rootRect.width - MaterialMergerStyles.TopLabelWidth - 6, rootRect.height);
 
-            EditorGUI.LabelField(rootLabelRect, "루트");
+            EditorGUI.LabelField(rootLabelRect, Localization.Get(L10nKey.Root));
             EditorGUI.BeginChangeCheck();
             var newRoot = (GameObject)EditorGUI.ObjectField(rootFieldRect, state.root, typeof(GameObject), true);
             if (EditorGUI.EndChangeCheck())
@@ -93,9 +96,9 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             var scanValueRect = new Rect(scanLabelRect.xMax + 6, scanRect.y,
                 scanRect.width - MaterialMergerStyles.TopLabelWidth - 6, scanRect.height);
 
-            var scanLabelContent = new GUIContent("마지막 스캔");
+            var scanLabelContent = new GUIContent(Localization.Get(L10nKey.LastScan));
             EditorGUI.LabelField(scanLabelRect, scanLabelContent, Styles.stMiniDim);
-            EditorGUI.LabelField(scanValueRect, Utilities.GUIUtility.GetLastScanLabel(state.profile),
+            EditorGUI.LabelField(scanValueRect, Utilities.GUIUtility.GetLastScanLabel(state.profile, Localization),
                 Styles.stMiniDim);
         }
 
@@ -114,10 +117,11 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             var outPathRect = new Rect(outBtnRect.xMax + 6, outFieldRect.y, outFieldRect.width - buttonWidth - 6,
                 outFieldRect.height);
 
-            if (GUI.Button(outBtnRect, Utilities.GUIUtility.MakeIconContent("출력 폴더", "Folder Icon",
-                    "d_Folder Icon", "출력 폴더"), Styles.stToolbarBtn))
+            var outputFolderText = Localization.Get(L10nKey.OutputFolder);
+            if (GUI.Button(outBtnRect, Utilities.GUIUtility.MakeIconContent(outputFolderText, "Folder Icon",
+                    "d_Folder Icon", outputFolderText), Styles.stToolbarBtn))
             {
-                var picked = EditorUtility.OpenFolderPanel("출력 폴더 선택", Application.dataPath, "");
+                var picked = EditorUtility.OpenFolderPanel(Localization.Get(L10nKey.DialogOutputFolderTitle), Application.dataPath, "");
                 if (!string.IsNullOrEmpty(picked))
                 {
                     picked = picked.Replace("\\", "/");
@@ -128,7 +132,8 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                     }
                     else
                     {
-                        EditorUtility.DisplayDialog("출력 폴더", "Assets 폴더 내부만 가능합니다.", "OK");
+                        EditorUtility.DisplayDialog(Localization.Get(L10nKey.OutputFolder),
+                            Localization.Get(L10nKey.DialogOutputFolderError), "OK");
                     }
                 }
             }

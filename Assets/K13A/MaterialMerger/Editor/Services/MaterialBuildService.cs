@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using K13A.MaterialMerger.Editor.Models;
+using K13A.MaterialMerger.Editor.Services.Localization;
 
 namespace K13A.MaterialMerger.Editor.Services
 {
@@ -15,6 +16,7 @@ namespace K13A.MaterialMerger.Editor.Services
         public ITextureProcessor TextureProcessor { get; set; }
         public IMeshRemapper MeshRemapper { get; set; }
         public IMaterialScanService ScanService { get; set; }
+        public ILocalizationService LocalizationService { get; set; }
 
         public void BuildAndApplyWithConfirm(
             dynamic owner,
@@ -25,7 +27,7 @@ namespace K13A.MaterialMerger.Editor.Services
         {
             if (scans == null || scans.Count == 0)
             {
-                EditorUtility.DisplayDialog("멀티 아틀라스", "스캔 결과가 없습니다.", "OK");
+                EditorUtility.DisplayDialog(LocalizationService.Get(L10nKey.WindowTitle), LocalizationService.Get(L10nKey.DialogNoScan), "OK");
                 return;
             }
 
@@ -71,7 +73,7 @@ namespace K13A.MaterialMerger.Editor.Services
                 var gi = new ConfirmWindow.GroupInfo();
                 gi.title = title;
                 gi.willRun = willRun;
-                gi.skipReason = willRun ? "" : "미해결 diff가 있는데 정책이 '미해결이면중단'이라 이 Material Plan은 스킵됩니다.";
+                gi.skipReason = willRun ? "" : LocalizationService.Get(L10nKey.UnresolvedDiffReason);
                 gi.atlasProps = atlasProps;
                 gi.generatedProps = generatedProps;
 
@@ -80,11 +82,11 @@ namespace K13A.MaterialMerger.Editor.Services
 
             if (list.Count == 0)
             {
-                EditorUtility.DisplayDialog("멀티 아틀라스", "활성화된 Material Plan이 없습니다.", "OK");
+                EditorUtility.DisplayDialog(LocalizationService.Get(L10nKey.WindowTitle), LocalizationService.Get(L10nKey.DialogNoPlan), "OK");
                 return;
             }
 
-            ConfirmWindow.Open(owner, list);
+            ConfirmWindow.Open(owner, list, LocalizationService);
         }
 
         public void BuildAndApply(
@@ -103,13 +105,13 @@ namespace K13A.MaterialMerger.Editor.Services
         {
             if (TextureProcessor == null || AtlasGenerator == null || MeshRemapper == null || ScanService == null)
             {
-                EditorUtility.DisplayDialog("멀티 아틀라스", "서비스가 초기화되지 않았습니다.", "OK");
+                EditorUtility.DisplayDialog(LocalizationService.Get(L10nKey.WindowTitle), LocalizationService.Get(L10nKey.DialogServiceNotInitialized), "OK");
                 return;
             }
 
             if (cloneRootOnApply && !root)
             {
-                EditorUtility.DisplayDialog("멀티 아틀라스", "루트가 필요합니다(적용 시 루트 복제 옵션).", "OK");
+                EditorUtility.DisplayDialog(LocalizationService.Get(L10nKey.WindowTitle), LocalizationService.Get(L10nKey.DialogRootRequired), "OK");
                 return;
             }
 
@@ -173,7 +175,8 @@ namespace K13A.MaterialMerger.Editor.Services
 
             Undo.CollapseUndoOperations(ug);
 
-            EditorUtility.DisplayDialog("멀티 아틀라스", $"완료\n로그: {logPath}", "OK");
+            var message = $"{LocalizationService.Get(L10nKey.DialogComplete)}\n{LocalizationService.Get(L10nKey.DialogLog, logPath)}";
+            EditorUtility.DisplayDialog(LocalizationService.Get(L10nKey.WindowTitle), message, "OK");
         }
 
         public GameObject CloneRootForApply(GameObject src, bool deactivateOriginal)

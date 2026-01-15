@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using K13A.MaterialMerger.Editor.Core;
 using K13A.MaterialMerger.Editor.Models;
+using K13A.MaterialMerger.Editor.Services.Localization;
 
 namespace K13A.MaterialMerger.Editor.UI.Utilities
 {
@@ -101,9 +102,9 @@ namespace K13A.MaterialMerger.Editor.UI.Utilities
         /// <summary>
         /// 마지막 스캔 시각 레이블 생성
         /// </summary>
-        public static string GetLastScanLabel(MaterialMergeProfile profile)
+        public static string GetLastScanLabel(MaterialMergeProfile profile, ILocalizationService localization)
         {
-            if (!profile || profile.lastScanTicksUtc <= 0) return "(없음)";
+            if (!profile || profile.lastScanTicksUtc <= 0) return localization.Get(L10nKey.NoScan);
             var dt = new DateTime(profile.lastScanTicksUtc, DateTimeKind.Utc).ToLocalTime();
             return dt.ToString("yyyy-MM-dd HH:mm:ss");
         }

@@ -3,6 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using K13A.MaterialMerger.Editor.Core;
 using K13A.MaterialMerger.Editor.Models;
+using K13A.MaterialMerger.Editor.Services.Localization;
 
 namespace K13A.MaterialMerger.Editor.UI.Components
 {
@@ -12,6 +13,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
     public class GlobalSettingsPanelRenderer
     {
         public MaterialMergerStyles Styles { get; set; }
+        public ILocalizationService Localization { get; set; }
 
         /// <summary>
         /// 전역 설정 패널 렌더링
@@ -38,14 +40,14 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         /// </summary>
         private void DrawGroupingRules(MaterialMergerState state)
         {
-            Utilities.GUIUtility.DrawSection("머테리얼 분리 규칙", Styles.stSection);
+            Utilities.GUIUtility.DrawSection(Localization.Get(L10nKey.MaterialGroupingRules), Styles.stSection);
             using (new EditorGUILayout.HorizontalScope())
             {
-                state.groupByKeywords = EditorGUILayout.ToggleLeft("키워드로 분리", state.groupByKeywords,
-                    GUILayout.Width(130));
-                state.groupByRenderQueue = EditorGUILayout.ToggleLeft("RenderQueue로 분리",
+                state.groupByKeywords = EditorGUILayout.ToggleLeft(Localization.Get(L10nKey.GroupByKeywords),
+                    state.groupByKeywords, GUILayout.Width(130));
+                state.groupByRenderQueue = EditorGUILayout.ToggleLeft(Localization.Get(L10nKey.GroupByRenderQueue),
                     state.groupByRenderQueue, GUILayout.Width(150));
-                state.splitOpaqueTransparent = EditorGUILayout.ToggleLeft("불투명/투명 분리",
+                state.splitOpaqueTransparent = EditorGUILayout.ToggleLeft(Localization.Get(L10nKey.SplitOpaqueTransparent),
                     state.splitOpaqueTransparent, GUILayout.Width(150));
             }
         }
@@ -55,13 +57,13 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         /// </summary>
         private void DrawApplicationSettings(MaterialMergerState state)
         {
-            Utilities.GUIUtility.DrawSection("적용 방식", Styles.stSection);
+            Utilities.GUIUtility.DrawSection(Localization.Get(L10nKey.ApplicationMethod), Styles.stSection);
             using (new EditorGUILayout.HorizontalScope())
             {
-                state.cloneRootOnApply = EditorGUILayout.ToggleLeft("적용 시 루트 복제", state.cloneRootOnApply,
-                    GUILayout.Width(150));
+                state.cloneRootOnApply = EditorGUILayout.ToggleLeft(Localization.Get(L10nKey.CloneRootOnApply),
+                    state.cloneRootOnApply, GUILayout.Width(150));
                 using (new EditorGUI.DisabledScope(!state.cloneRootOnApply))
-                    state.deactivateOriginalRoot = EditorGUILayout.ToggleLeft("원본 루트 비활성화",
+                    state.deactivateOriginalRoot = EditorGUILayout.ToggleLeft(Localization.Get(L10nKey.DeactivateOriginalRoot),
                         state.deactivateOriginalRoot, GUILayout.Width(160));
             }
         }
@@ -71,17 +73,17 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         /// </summary>
         private void DrawAtlasSettings(MaterialMergerState state)
         {
-            Utilities.GUIUtility.DrawSection("아틀라스", Styles.stSection);
+            Utilities.GUIUtility.DrawSection(Localization.Get(L10nKey.Atlas), Styles.stSection);
             using (new EditorGUILayout.HorizontalScope())
             {
-                state.atlasSize = EditorGUILayout.IntPopup("크기", state.atlasSize, new[] { "4096", "8192" },
-                    new[] { 4096, 8192 }, GUILayout.Width(220));
-                state.grid = EditorGUILayout.IntPopup("그리드", state.grid, new[] { "2", "4" }, new[] { 2, 4 },
-                    GUILayout.Width(200));
+                state.atlasSize = EditorGUILayout.IntPopup(Localization.Get(L10nKey.AtlasSize), state.atlasSize,
+                    new[] { "4096", "8192" }, new[] { 4096, 8192 }, GUILayout.Width(220));
+                state.grid = EditorGUILayout.IntPopup(Localization.Get(L10nKey.Grid), state.grid,
+                    new[] { "2", "4" }, new[] { 2, 4 }, GUILayout.Width(200));
                 GUILayout.FlexibleSpace();
             }
 
-            state.paddingPx = EditorGUILayout.IntSlider("패딩(px)", state.paddingPx, 0, 64);
+            state.paddingPx = EditorGUILayout.IntSlider(Localization.Get(L10nKey.Padding), state.paddingPx, 0, 64);
         }
 
         /// <summary>
@@ -89,8 +91,9 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         /// </summary>
         private void DrawPolicySettings(MaterialMergerState state)
         {
-            Utilities.GUIUtility.DrawSection("정책", Styles.stSection);
-            state.diffPolicy = (DiffPolicy)EditorGUILayout.EnumPopup("미해결 diff 처리", state.diffPolicy);
+            Utilities.GUIUtility.DrawSection(Localization.Get(L10nKey.Policy), Styles.stSection);
+            state.diffPolicy = (DiffPolicy)EditorGUILayout.EnumPopup(Localization.Get(L10nKey.UnresolvedDiffPolicy),
+                state.diffPolicy);
         }
     }
 }

@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using K13A.MaterialMerger.Editor.Core;
 using K13A.MaterialMerger.Editor.Models;
+using K13A.MaterialMerger.Editor.Services.Localization;
 
 namespace K13A.MaterialMerger.Editor.UI.Components
 {
@@ -14,6 +15,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
     {
         public MaterialMergerStyles Styles { get; set; }
         public GroupPanelRenderer GroupRenderer { get; set; }
+        public ILocalizationService Localization { get; set; }
 
         /// <summary>
         /// 그룹 목록 렌더링
@@ -23,7 +25,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             if (scans == null || scans.Count == 0)
             {
                 using (new EditorGUILayout.VerticalScope(Styles.stBox))
-                    EditorGUILayout.HelpBox("루트를 지정한 뒤 스캔을 실행하세요.", MessageType.Info);
+                    EditorGUILayout.HelpBox(Localization.Get(L10nKey.NoScanMessage), MessageType.Info);
                 return;
             }
 
@@ -44,22 +46,22 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         {
             using (new EditorGUILayout.HorizontalScope(Styles.stBox))
             {
-                GUILayout.Label("계획 목록", Styles.stSubTitle);
+                GUILayout.Label(Localization.Get(L10nKey.PlanList), Styles.stSubTitle);
                 GUILayout.FlexibleSpace();
 
-                if (GUILayout.Button("전체 펼치기", Styles.stToolbarBtn, GUILayout.Width(95)))
+                if (GUILayout.Button(Localization.Get(L10nKey.ExpandAll), Styles.stToolbarBtn, GUILayout.Width(95)))
                     foreach (var g in scans)
                         g.foldout = true;
 
-                if (GUILayout.Button("전체 접기", Styles.stToolbarBtn, GUILayout.Width(95)))
+                if (GUILayout.Button(Localization.Get(L10nKey.CollapseAll), Styles.stToolbarBtn, GUILayout.Width(95)))
                     foreach (var g in scans)
                         g.foldout = false;
 
-                if (GUILayout.Button("전체 활성", Styles.stToolbarBtn, GUILayout.Width(90)))
+                if (GUILayout.Button(Localization.Get(L10nKey.EnableAll), Styles.stToolbarBtn, GUILayout.Width(90)))
                     foreach (var g in scans)
                         g.enabled = true;
 
-                if (GUILayout.Button("전체 비활성", Styles.stToolbarBtn, GUILayout.Width(90)))
+                if (GUILayout.Button(Localization.Get(L10nKey.DisableAll), Styles.stToolbarBtn, GUILayout.Width(90)))
                     foreach (var g in scans)
                         g.enabled = false;
             }

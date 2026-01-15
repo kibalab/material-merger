@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using K13A.MaterialMerger.Editor.Models;
 using K13A.MaterialMerger.Editor.Services;
+using K13A.MaterialMerger.Editor.Services.Localization;
 using K13A.MaterialMerger.Editor.UI.Components;
 
 namespace K13A.MaterialMerger.Editor.Core
@@ -25,6 +26,7 @@ namespace K13A.MaterialMerger.Editor.Core
         private ITextureProcessor textureProcessor;
         private IAtlasGenerator atlasGenerator;
         private IMeshRemapper meshRemapper;
+        private ILocalizationService localizationService;
 
         // UI Renderers
         private TopPanelRenderer topPanel;
@@ -32,13 +34,20 @@ namespace K13A.MaterialMerger.Editor.Core
         private GroupListRenderer groupList;
 
         [MenuItem("Kiba/렌더링/멀티 아틀라스 머저")]
-        static void Open() => GetWindow<MaterialMergerWindow>("멀티 아틀라스 머저");
+        static void Open()
+        {
+            GetWindow<MaterialMergerWindow>();
+            // Title will be set in OnEnable after localization service is initialized
+        }
 
         void OnEnable()
         {
             InitializeState();
             InitializeServices();
             InitializeUI();
+
+            // Set window title with localization
+            titleContent = new GUIContent(localizationService.Get(L10nKey.WindowTitle));
 
             wantsMouseMove = true;
             state.profile = state.root ? profileService.EnsureProfile(state.root, false) : null;
@@ -81,6 +90,9 @@ namespace K13A.MaterialMerger.Editor.Core
 
         private void InitializeServices()
         {
+            // Localization service (must be first as other services may use it)
+            localizationService = new LocalizationService();
+
             // 기본 서비스 생성
             atlasGenerator = new AtlasGenerator();
             textureProcessor = new TextureProcessor();
@@ -94,7 +106,8 @@ namespace K13A.MaterialMerger.Editor.Core
                 AtlasGenerator = atlasGenerator,
                 TextureProcessor = textureProcessor,
                 MeshRemapper = meshRemapper,
-                ScanService = scanService
+                ScanService = scanService,
+                LocalizationService = localizationService
             };
         }
 
@@ -103,12 +116,12 @@ namespace K13A.MaterialMerger.Editor.Core
             styles = new MaterialMergerStyles();
 
             // UI 렌더러 생성 및 의존성 주입 (하향식)
-            var rowRenderer = new PropertyRowRenderer { Styles = styles };
-            var tableRenderer = new PropertyTableRenderer { Styles = styles, RowRenderer = rowRenderer };
-            var groupPanel = new GroupPanelRenderer { Styles = styles, TableRenderer = tableRenderer };
-            groupList = new GroupListRenderer { Styles = styles, GroupRenderer = groupPanel };
-            globalPanel = new GlobalSettingsPanelRenderer { Styles = styles };
-            topPanel = new TopPanelRenderer { Styles = styles };
+            var rowRenderer = new PropertyRowRenderer { Styles = styles, Localization = localizationService };
+            var tableRenderer = new PropertyTableRenderer { Styles = styles, RowRenderer = rowRenderer, Localization = localizationService };
+            var groupPanel = new GroupPanelRenderer { Styles = styles, TableRenderer = tableRenderer, Localization = localizationService };
+            groupList = new GroupListRenderer { Styles = styles, GroupRenderer = groupPanel, Localization = localizationService };
+            globalPanel = new GlobalSettingsPanelRenderer { Styles = styles, Localization = localizationService };
+            topPanel = new TopPanelRenderer { Styles = styles, Localization = localizationService };
         }
 
         #endregion

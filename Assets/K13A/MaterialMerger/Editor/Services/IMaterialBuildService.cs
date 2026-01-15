@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 using K13A.MaterialMerger.Editor.Models;
+using K13A.MaterialMerger.Editor.Services.Localization;
 
 namespace K13A.MaterialMerger.Editor.Services
 {
     public interface IMaterialBuildService
     {
+        ILocalizationService LocalizationService { get; set; }
+
         /// <summary>
         /// 빌드 확인 창 표시
         /// </summary>

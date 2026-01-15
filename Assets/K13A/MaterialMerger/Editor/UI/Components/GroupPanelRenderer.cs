@@ -3,6 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using K13A.MaterialMerger.Editor.Core;
 using K13A.MaterialMerger.Editor.Models;
+using K13A.MaterialMerger.Editor.Services.Localization;
 
 namespace K13A.MaterialMerger.Editor.UI.Components
 {
@@ -13,6 +14,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
     {
         public MaterialMergerStyles Styles { get; set; }
         public PropertyTableRenderer TableRenderer { get; set; }
+        public ILocalizationService Localization { get; set; }
 
         /// <summary>
         /// 그룹 패널 렌더링
@@ -44,12 +46,14 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                 g.foldout = EditorGUILayout.Foldout(g.foldout, foldoutContent, true);
                 GUILayout.FlexibleSpace();
 
-                Utilities.GUIUtility.DrawPill($"머티리얼 {g.mats.Count}", false, Styles.stPill, Styles.stPillWarn);
-                Utilities.GUIUtility.DrawPill($"페이지 {g.pageCount}", false, Styles.stPill, Styles.stPillWarn);
+                Utilities.GUIUtility.DrawPill(Localization.Get(L10nKey.Material, g.mats.Count), false,
+                    Styles.stPill, Styles.stPillWarn);
+                Utilities.GUIUtility.DrawPill(Localization.Get(L10nKey.Page, g.pageCount), false,
+                    Styles.stPill, Styles.stPillWarn);
 
                 if (g.skippedMultiMat > 0)
-                    Utilities.GUIUtility.DrawPill($"스킵 {g.skippedMultiMat}", true, Styles.stPill,
-                        Styles.stPillWarn);
+                    Utilities.GUIUtility.DrawPill(Localization.Get(L10nKey.Skip, g.skippedMultiMat), true,
+                        Styles.stPill, Styles.stPillWarn);
             }
         }
 
@@ -63,21 +67,21 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             {
                 g.search = Utilities.GUIUtility.DrawSearchField(g.search, 260, lineHeight);
 
-                g.onlyRelevant = GUILayout.Toggle(g.onlyRelevant, "관련만", Styles.stToolbarBtn,
-                    GUILayout.Width(70), GUILayout.Height(lineHeight));
-                g.showTexturesOnly = GUILayout.Toggle(g.showTexturesOnly, "텍스처만", Styles.stToolbarBtn,
-                    GUILayout.Width(80), GUILayout.Height(lineHeight));
-                g.showScalarsOnly = GUILayout.Toggle(g.showScalarsOnly, "스칼라만", Styles.stToolbarBtn,
-                    GUILayout.Width(80), GUILayout.Height(lineHeight));
+                g.onlyRelevant = GUILayout.Toggle(g.onlyRelevant, Localization.Get(L10nKey.RelevantOnly),
+                    Styles.stToolbarBtn, GUILayout.Width(70), GUILayout.Height(lineHeight));
+                g.showTexturesOnly = GUILayout.Toggle(g.showTexturesOnly, Localization.Get(L10nKey.TexturesOnly),
+                    Styles.stToolbarBtn, GUILayout.Width(80), GUILayout.Height(lineHeight));
+                g.showScalarsOnly = GUILayout.Toggle(g.showScalarsOnly, Localization.Get(L10nKey.ScalarsOnly),
+                    Styles.stToolbarBtn, GUILayout.Width(80), GUILayout.Height(lineHeight));
 
                 GUILayout.FlexibleSpace();
 
-                if (GUILayout.Button("텍스처 아틀라스 전체 켜기", Styles.stToolbarBtn, GUILayout.Width(170),
-                        GUILayout.Height(lineHeight)))
+                if (GUILayout.Button(Localization.Get(L10nKey.EnableAllTextureAtlas), Styles.stToolbarBtn,
+                        GUILayout.Width(170), GUILayout.Height(lineHeight)))
                     SetAllTexActions(g, true);
 
-                if (GUILayout.Button("텍스처 아틀라스 전체 끄기", Styles.stToolbarBtn, GUILayout.Width(170),
-                        GUILayout.Height(lineHeight)))
+                if (GUILayout.Button(Localization.Get(L10nKey.DisableAllTextureAtlas), Styles.stToolbarBtn,
+                        GUILayout.Width(170), GUILayout.Height(lineHeight)))
                     SetAllTexActions(g, false);
             }
         }
