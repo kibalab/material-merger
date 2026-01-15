@@ -39,7 +39,6 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                     using (new EditorGUI.DisabledScope(isMergeChild))
                     {
                         DrawGroupToolbar(g);
-                        DrawOutputNameField(g);
                         EditorGUILayout.Space(4);
                         TableRenderer.DrawTable(g);
                     }
@@ -59,6 +58,8 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         {
             var shaderName = Utilities.GUIUtility.GetGroupShaderName(g);
             bool isSingleMaterial = g.mats.Count == 1;
+            if (string.IsNullOrEmpty(g.outputMaterialName))
+                g.outputMaterialName = shaderName;
 
             using (new EditorGUILayout.HorizontalScope())
             {
@@ -74,16 +75,29 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                     g.enabled = EditorGUILayout.Toggle(g.enabled, GUILayout.Width(16));
                 }
 
-                var foldoutContent = new GUIContent($"{shaderName}   [{g.tag}]");
                 if (isSingleMaterial)
                 {
                     g.foldout = false;
-                    GUILayout.Label(foldoutContent, EditorStyles.label);
+                    GUILayout.Space(12);
                 }
                 else
                 {
-                    g.foldout = EditorGUILayout.Foldout(g.foldout, foldoutContent, true);
+                    var foldRect = GUILayoutUtility.GetRect(12f, EditorGUIUtility.singleLineHeight, GUILayout.Width(12f));
+                    g.foldout = EditorGUI.Foldout(foldRect, g.foldout, GUIContent.none, true);
                 }
+
+                using (new EditorGUI.DisabledScope(isMergeChild))
+                {
+                    var fieldRect = GUILayoutUtility.GetRect(160f, EditorGUIUtility.singleLineHeight,
+                        GUILayout.MinWidth(160), GUILayout.ExpandWidth(true));
+                    g.outputMaterialName = EditorGUI.TextField(fieldRect, g.outputMaterialName);
+                    if (Event.current.type == EventType.Repaint)
+                        GUI.Label(fieldRect, new GUIContent("", Localization.Get(L10nKey.OutputMaterialNameTooltip)));
+                }
+
+                if (!string.IsNullOrEmpty(g.tag))
+                    GUILayout.Label($"[{g.tag}]", Styles.stMiniDim, GUILayout.Width(50));
+
                 GUILayout.FlexibleSpace();
 
                 // 단일 머티리얼이면 특별 표시
@@ -175,20 +189,6 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                 if (GUILayout.Button(Localization.Get(L10nKey.DisableAllTextureAtlas), Styles.stToolbarBtn,
                         GUILayout.Width(170), GUILayout.Height(lineHeight)))
                     SetAllTexActions(g, false);
-            }
-        }
-
-        private void DrawOutputNameField(GroupScan g)
-        {
-            if (string.IsNullOrEmpty(g.outputMaterialName))
-                g.outputMaterialName = Utilities.GUIUtility.GetGroupShaderName(g);
-
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                var label = new GUIContent(Localization.Get(L10nKey.OutputMaterialName),
-                    Localization.Get(L10nKey.OutputMaterialNameTooltip));
-                GUILayout.Label(label, EditorStyles.label, GUILayout.Width(180));
-                g.outputMaterialName = EditorGUILayout.TextField(g.outputMaterialName, GUILayout.MinWidth(140));
             }
         }
 
