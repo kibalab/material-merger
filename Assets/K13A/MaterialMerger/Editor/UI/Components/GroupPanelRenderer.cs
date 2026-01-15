@@ -15,6 +15,8 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         public MaterialMergerStyles Styles { get; set; }
         public PropertyTableRenderer TableRenderer { get; set; }
         public ILocalizationService Localization { get; set; }
+        private readonly System.Collections.Generic.Dictionary<GroupScan, Rect> materialsButtonRects =
+            new System.Collections.Generic.Dictionary<GroupScan, Rect>();
 
         /// <summary>
         /// 그룹 패널 렌더링
@@ -80,6 +82,26 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                 if (g.skippedMultiMat > 0)
                     Utilities.GUIUtility.DrawPill(Localization.Get(L10nKey.Skip, g.skippedMultiMat), true,
                         Styles.stPill, Styles.stPillWarn, Localization.Get(L10nKey.MultiMatTooltip));
+
+                using (new EditorGUI.DisabledScope(g.mats == null || g.mats.Count == 0))
+                {
+                    var materialsContent = Utilities.GUIUtility.MakeIconContent(
+                        Localization.Get(L10nKey.PlanMaterials), "Material Icon", "d_Material Icon",
+                        Localization.Get(L10nKey.PlanMaterialsTooltip));
+                    bool clicked = GUILayout.Button(materialsContent, Styles.stToolbarBtn, GUILayout.Width(120), GUILayout.Height(18));
+                    var buttonRect = GUILayoutUtility.GetLastRect();
+                    if (Event.current.type == EventType.Repaint && buttonRect.width > 0f && buttonRect.height > 0f)
+                        materialsButtonRects[g] = buttonRect;
+                    if (clicked)
+                    {
+                        if (!materialsButtonRects.TryGetValue(g, out var anchorRect) || anchorRect.width <= 0f)
+                        {
+                            var mouse = Event.current.mousePosition;
+                            anchorRect = new Rect(mouse.x, mouse.y, 1f, 1f);
+                        }
+                        MaterialGridPopup.Show(g, Localization, anchorRect);
+                    }
+                }
             }
         }
 

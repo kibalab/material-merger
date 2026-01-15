@@ -29,6 +29,18 @@ namespace K13A.MaterialMerger.Editor.Services
             var result = new List<GroupScan>();
             if (!profile || profile.groups == null || profile.groups.Count == 0) return result;
 
+            Dictionary<GroupKey, GroupScan> scanMap = null;
+            if (root && scanService != null)
+            {
+                var scannedGroups = scanService.ScanGameObject(
+                    root,
+                    profile.groupByKeywords,
+                    profile.groupByRenderQueue,
+                    profile.splitOpaqueTransparent,
+                    grid);
+                scanMap = scannedGroups.ToDictionary(g => g.key, g => g);
+            }
+
             foreach (var gs in profile.groups)
             {
                 Shader shader = null;
@@ -55,6 +67,15 @@ namespace K13A.MaterialMerger.Editor.Services
                     shaderName = shader.name;
 
                 var group = CreateGroupScanFromProfileData(gs, shader, shaderName, grid, scanService);
+
+                if (scanMap != null && scanMap.TryGetValue(group.key, out var scannedGroup))
+                {
+                    group.mats = scannedGroup.mats ?? new List<MatInfo>();
+                    group.tilesPerPage = scannedGroup.tilesPerPage;
+                    group.pageCount = scannedGroup.pageCount;
+                    group.skippedMultiMat = scannedGroup.skippedMultiMat;
+                }
+
                 result.Add(group);
             }
 

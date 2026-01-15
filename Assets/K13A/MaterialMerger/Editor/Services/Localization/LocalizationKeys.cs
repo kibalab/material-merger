@@ -102,6 +102,10 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
         public const string FilterTexturesTooltip = "group.filter_textures_tooltip";
         public const string FilterScalarsTooltip = "group.filter_scalars_tooltip";
         public const string OutputMaterialNameTooltip = "group.output_material_name_tooltip";
+        public const string PlanMaterials = "group.plan_materials";
+        public const string PlanMaterialsTooltip = "group.plan_materials_tooltip";
+        public const string PlanMaterialsTitle = "group.plan_materials_title";
+        public const string PlanMaterialsEmpty = "group.plan_materials_empty";
 
         // Property Table
         public const string Property = "table.property";
