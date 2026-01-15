@@ -18,6 +18,19 @@ namespace K13A.MaterialMerger.Editor.Services
         public IMaterialScanService ScanService { get; set; }
         public ILocalizationService LocalizationService { get; set; }
 
+        private struct PageTileInfo
+        {
+            public int pageIndex;
+            public int tileIndex;
+        }
+
+        private class PageBuildInfo
+        {
+            public int atlasSize;
+            public int gridCols;
+            public Material mergedMaterial;
+        }
+
         public void BuildAndApplyWithConfirm(
             dynamic owner,
             GameObject root,
@@ -315,6 +328,9 @@ namespace K13A.MaterialMerger.Editor.Services
                 allAtlasProps.Add(r.targetTexProp);
             }
 
+            var pageInfos = new List<PageBuildInfo>();
+            var matToPage = new Dictionary<Material, PageTileInfo>();
+
             for (int page = 0; page < g.pageCount; page++)
             {
                 int start = page * tilesPerPage;
@@ -348,6 +364,13 @@ namespace K13A.MaterialMerger.Editor.Services
 
                 // 최소 크기 보장 (너무 작으면 품질 저하)
                 actualAtlasSize = Mathf.Max(actualAtlasSize, cell);
+
+                for (int i = 0; i < pageItems.Count; i++)
+                {
+                    var mat = pageItems[i].mat;
+                    if (mat)
+                        matToPage[mat] = new PageTileInfo { pageIndex = page, tileIndex = i };
+                }
 
                 var atlasByProp = new Dictionary<string, Texture2D>(StringComparer.Ordinal);
 
@@ -503,118 +526,156 @@ namespace K13A.MaterialMerger.Editor.Services
                 AssetDatabase.CreateAsset(merged, matPath);
                 log.createdAssetPaths.Add(matPath);
 
-                ApplyToRenderers(g, pageItems, merged, log, cell, content,
-                    actualAtlasSize, actualGridCols, paddingPx, outputFolder);
+                pageInfos.Add(new PageBuildInfo
+                {
+                    atlasSize = actualAtlasSize,
+                    gridCols = actualGridCols,
+                    mergedMaterial = merged
+                });
             }
+
+            if (matToPage.Count == 0 || pageInfos.Count == 0) return;
+
+            ApplyToRenderers(g, matToPage, pageInfos, log, cell, content, paddingPx, outputFolder);
         }
 
         private void ApplyToRenderers(
             GroupScan g,
-            List<MatInfo> pageItems,
-            Material mergedMat,
+            Dictionary<Material, PageTileInfo> matToPage,
+            List<PageBuildInfo> pageInfos,
             KibaMultiAtlasMergerLog log,
             int cell,
             int content,
-            int atlasSize,
-            int gridCols,
             int paddingPx,
             string outputFolder)
         {
-            // 정사각형 아틀라스이므로 X/Y 스케일 동일
-            float tileScale = content / (float)atlasSize;
+            var renderers = new HashSet<Renderer>();
+            foreach (var mi in g.mats)
+                foreach (var u in mi.users)
+                    if (u)
+                        renderers.Add(u);
 
-            var matToIndex = new Dictionary<Material, int>();
-            for (int i = 0; i < pageItems.Count; i++) matToIndex[pageItems[i].mat] = i;
+            var meshCache = new Dictionary<(Mesh, string), Mesh>();
 
-            var meshCache = new Dictionary<(Mesh, int), Mesh>();
-
-            foreach (var mi in pageItems)
+            foreach (var r in renderers)
             {
-                foreach (var r in mi.users)
+                if (!r) continue;
+
+                var shared = r.sharedMaterials;
+                if (shared == null || shared.Length == 0) continue;
+
+                Mesh beforeMesh = null;
+                Mesh afterMesh = null;
+                MeshFilter mf = null;
+                SkinnedMeshRenderer smr = null;
+
+                if (r is SkinnedMeshRenderer smrRenderer)
                 {
-                    if (!r) continue;
+                    smr = smrRenderer;
+                    beforeMesh = smr.sharedMesh;
+                }
+                else
+                {
+                    mf = r.GetComponent<MeshFilter>();
+                    if (mf) beforeMesh = mf.sharedMesh;
+                }
 
-                    var shared = r.sharedMaterials;
-                    if (shared == null || shared.Length == 0) continue;
+                if (!beforeMesh) continue;
 
-                    int hitCount = 0;
-                    int tileIndex = -1;
+                int subMeshCount = beforeMesh.subMeshCount;
+                int maxIndex = Mathf.Min(shared.Length, subMeshCount);
+                var transforms = new List<SubmeshUvTransform>();
+                var beforeMats = shared.ToArray();
+                bool replaced = false;
 
-                    for (int s = 0; s < shared.Length; s++)
+                for (int s = 0; s < maxIndex; s++)
+                {
+                    var mat = beforeMats[s];
+                    if (!mat) continue;
+                    if (!matToPage.TryGetValue(mat, out var pageTile)) continue;
+                    if (pageTile.pageIndex < 0 || pageTile.pageIndex >= pageInfos.Count) continue;
+
+                    var page = pageInfos[pageTile.pageIndex];
+                    if (page.atlasSize <= 0 || page.gridCols <= 0) continue;
+
+                    int gx = pageTile.tileIndex % page.gridCols;
+                    int gy = pageTile.tileIndex / page.gridCols;
+                    float tileScale = content / (float)page.atlasSize;
+                    float ox = (gx * cell + paddingPx) / (float)page.atlasSize;
+                    float oy = (gy * cell + paddingPx) / (float)page.atlasSize;
+
+                    transforms.Add(new SubmeshUvTransform
                     {
-                        if (shared[s] && matToIndex.TryGetValue(shared[s], out var idx))
+                        subMeshIndex = s,
+                        scale = new Vector2(tileScale, tileScale),
+                        offset = new Vector2(ox, oy)
+                    });
+
+                    shared[s] = page.mergedMaterial;
+                    replaced = true;
+                }
+
+                if (beforeMats.Length > 0 && beforeMats.Length < subMeshCount)
+                {
+                    var fallbackMat = beforeMats[beforeMats.Length - 1];
+                    if (fallbackMat && matToPage.TryGetValue(fallbackMat, out var fallbackPage))
+                    {
+                        if (fallbackPage.pageIndex >= 0 && fallbackPage.pageIndex < pageInfos.Count)
                         {
-                            hitCount++;
-                            if (tileIndex < 0) tileIndex = idx;
-                            else if (tileIndex != idx)
+                            var page = pageInfos[fallbackPage.pageIndex];
+                            if (page.atlasSize > 0 && page.gridCols > 0)
                             {
-                                tileIndex = -2;
-                                break;
+                                int gx = fallbackPage.tileIndex % page.gridCols;
+                                int gy = fallbackPage.tileIndex / page.gridCols;
+                                float tileScale = content / (float)page.atlasSize;
+                                float ox = (gx * cell + paddingPx) / (float)page.atlasSize;
+                                float oy = (gy * cell + paddingPx) / (float)page.atlasSize;
+
+                                if (shared.Length > 0)
+                                    shared[shared.Length - 1] = page.mergedMaterial;
+                                replaced = true;
+
+                                for (int s = shared.Length; s < subMeshCount; s++)
+                                {
+                                    transforms.Add(new SubmeshUvTransform
+                                    {
+                                        subMeshIndex = s,
+                                        scale = new Vector2(tileScale, tileScale),
+                                        offset = new Vector2(ox, oy)
+                                    });
+                                }
                             }
                         }
                     }
-
-                    if (tileIndex < 0) continue;
-                    if (tileIndex == -2) continue;
-                    if (hitCount > 1) continue;
-
-                    var beforeMats = shared.ToArray();
-                    bool replaced = false;
-
-                    Undo.RecordObject(r, "머지 머티리얼 적용");
-                    for (int s = 0; s < shared.Length; s++)
-                    {
-                        if (shared[s] == mi.mat)
-                        {
-                            shared[s] = mergedMat;
-                            replaced = true;
-                        }
-                    }
-
-                    if (!replaced) continue;
-                    r.sharedMaterials = shared;
-
-                    int gx = tileIndex % gridCols;
-                    int gy = tileIndex / gridCols;
-                    float ox = (gx * cell + paddingPx) / (float)atlasSize;
-                    float oy = (gy * cell + paddingPx) / (float)atlasSize;
-
-                    var scale = new Vector2(tileScale, tileScale);
-                    var offset = new Vector2(ox, oy);
-
-                    Mesh beforeMesh = null;
-                    Mesh afterMesh = null;
-
-                    if (r is SkinnedMeshRenderer smr)
-                    {
-                        beforeMesh = smr.sharedMesh;
-                        if (beforeMesh)
-                        {
-                            Undo.RecordObject(smr, "메쉬 UV 리맵");
-                            afterMesh = MeshRemapper.GetOrCreateRemappedMesh(beforeMesh, tileIndex, scale, offset, meshCache, outputFolder);
-                            smr.sharedMesh = afterMesh;
-                        }
-                    }
-                    else
-                    {
-                        var mf = r.GetComponent<MeshFilter>();
-                        if (mf && mf.sharedMesh)
-                        {
-                            beforeMesh = mf.sharedMesh;
-                            Undo.RecordObject(mf, "메쉬 UV 리맵");
-                            afterMesh = MeshRemapper.GetOrCreateRemappedMesh(beforeMesh, tileIndex, scale, offset, meshCache, outputFolder);
-                            mf.sharedMesh = afterMesh;
-                        }
-                    }
-
-                    var entry = new KibaMultiAtlasMergerLog.Entry();
-                    entry.rendererGlobalId = GlobalObjectId.GetGlobalObjectIdSlow(r).ToString();
-                    entry.beforeMaterials = beforeMats;
-                    entry.afterMaterials = r.sharedMaterials.ToArray();
-                    entry.beforeMesh = beforeMesh;
-                    entry.afterMesh = afterMesh;
-                    log.entries.Add(entry);
                 }
+
+                if (!replaced || transforms.Count == 0) continue;
+
+                transforms.Sort((a, b) => a.subMeshIndex.CompareTo(b.subMeshIndex));
+
+                Undo.RecordObject(r, "머지 머티리얼 적용");
+                r.sharedMaterials = shared;
+
+                if (smr)
+                {
+                    Undo.RecordObject(smr, "메쉬 UV 리맵");
+                    afterMesh = MeshRemapper.GetOrCreateRemappedMesh(beforeMesh, transforms, meshCache, outputFolder);
+                    smr.sharedMesh = afterMesh;
+                }
+                else if (mf)
+                {
+                    Undo.RecordObject(mf, "메쉬 UV 리맵");
+                    afterMesh = MeshRemapper.GetOrCreateRemappedMesh(beforeMesh, transforms, meshCache, outputFolder);
+                    mf.sharedMesh = afterMesh;
+                }
+
+                var entry = new KibaMultiAtlasMergerLog.Entry();
+                entry.rendererGlobalId = GlobalObjectId.GetGlobalObjectIdSlow(r).ToString();
+                entry.beforeMaterials = beforeMats;
+                entry.afterMaterials = r.sharedMaterials.ToArray();
+                entry.beforeMesh = beforeMesh;
+                entry.afterMesh = afterMesh;
+                log.entries.Add(entry);
             }
         }
 

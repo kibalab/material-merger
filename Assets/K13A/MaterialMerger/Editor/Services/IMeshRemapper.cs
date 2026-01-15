@@ -4,6 +4,13 @@ using UnityEngine;
 
 namespace K13A.MaterialMerger.Editor.Services
 {
+    public struct SubmeshUvTransform
+    {
+        public int subMeshIndex;
+        public Vector2 scale;
+        public Vector2 offset;
+    }
+
     public interface IMeshRemapper
     {
         /// <summary>
@@ -11,10 +18,8 @@ namespace K13A.MaterialMerger.Editor.Services
         /// </summary>
         Mesh GetOrCreateRemappedMesh(
             Mesh sourceMesh,
-            int tileIndex,
-            Vector2 scale,
-            Vector2 offset,
-            Dictionary<(Mesh, int), Mesh> cache,
+            IReadOnlyList<SubmeshUvTransform> transforms,
+            Dictionary<(Mesh, string), Mesh> cache,
             string outputFolder
         );
     }
