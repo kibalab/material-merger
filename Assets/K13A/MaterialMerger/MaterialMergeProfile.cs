@@ -75,6 +75,7 @@ namespace K13A.MaterialMerger
 
         public bool cloneRootOnApply = true;
         public bool deactivateOriginalRoot = true;
+        public bool keepPrefabOnClone = true;
 
         public int atlasSize = 8192;
         public int grid = 4;

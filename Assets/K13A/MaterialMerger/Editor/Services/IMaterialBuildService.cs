@@ -32,6 +32,7 @@ namespace K13A.MaterialMerger.Editor.Services
             Material sampleMaterial,
             bool cloneRootOnApply,
             bool deactivateOriginalRoot,
+            bool keepPrefabOnClone,
             string outputFolder,
             int atlasSize,
             int grid,
@@ -44,7 +45,7 @@ namespace K13A.MaterialMerger.Editor.Services
         /// <summary>
         /// 적용을 위한 루트 복제
         /// </summary>
-        GameObject CloneRootForApply(GameObject src, bool deactivateOriginal);
+        GameObject CloneRootForApply(GameObject src, bool deactivateOriginal, bool keepPrefab);
 
         /// <summary>
         /// 설정 복사 (from -> to)

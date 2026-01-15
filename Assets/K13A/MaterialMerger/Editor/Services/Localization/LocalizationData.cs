@@ -55,6 +55,8 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 [L10nKey.CloneRootOnApplyTooltip] = "적용 시 루트를 복제해 원본을 보존합니다.",
                 [L10nKey.DeactivateOriginalRoot] = "원본 루트 비활성화",
                 [L10nKey.DeactivateOriginalRootTooltip] = "복제 후 원본 루트를 비활성화합니다.",
+                [L10nKey.KeepPrefabOnClone] = "복제 시 프리팹 유지",
+                [L10nKey.KeepPrefabOnCloneTooltip] = "복제 시 프리팹 상태를 유지합니다 (메시/머티리얼만 교체).",
                 [L10nKey.ApplySummaryCloneDeactivate] = "복제본에 적용하고 원본을 비활성화합니다.",
                 [L10nKey.ApplySummaryCloneKeep] = "복제본에 적용하고 원본을 유지합니다.",
                 [L10nKey.ApplySummaryDirect] = "선택한 루트에 바로 적용합니다.",
@@ -217,7 +219,15 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 [L10nKey.LanguageSettings] = "언어 설정",
                 [L10nKey.LanguageKorean] = "한국어",
                 [L10nKey.LanguageEnglish] = "English",
-                [L10nKey.LanguageJapanese] = "日本語"
+                [L10nKey.LanguageJapanese] = "日本語",
+
+                // Log Console
+                [L10nKey.ShowLogConsole] = "로그 콘솔",
+                [L10nKey.LogConsole] = "로그 콘솔",
+                [L10nKey.ClearLogs] = "로그 지우기",
+                [L10nKey.AutoScroll] = "자동 스크롤",
+                [L10nKey.LogDetails] = "상세 정보",
+                [L10nKey.NoDetails] = "상세 정보 없음"
             };
         }
 
@@ -258,6 +268,8 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 [L10nKey.CloneRootOnApplyTooltip] = "Clone the root on apply to keep the original.",
                 [L10nKey.DeactivateOriginalRoot] = "Deactivate Original Root",
                 [L10nKey.DeactivateOriginalRootTooltip] = "Deactivate original root after cloning.",
+                [L10nKey.KeepPrefabOnClone] = "Keep Prefab on Clone",
+                [L10nKey.KeepPrefabOnCloneTooltip] = "Keep prefab state when cloning (only replace mesh/materials).",
                 [L10nKey.ApplySummaryCloneDeactivate] = "Apply to clone and deactivate the original.",
                 [L10nKey.ApplySummaryCloneKeep] = "Apply to clone and keep the original.",
                 [L10nKey.ApplySummaryDirect] = "Apply directly to the selected root.",
@@ -420,7 +432,15 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 [L10nKey.LanguageSettings] = "Language",
                 [L10nKey.LanguageKorean] = "한국어",
                 [L10nKey.LanguageEnglish] = "English",
-                [L10nKey.LanguageJapanese] = "日本語"
+                [L10nKey.LanguageJapanese] = "日本語",
+
+                // Log Console
+                [L10nKey.ShowLogConsole] = "Log Console",
+                [L10nKey.LogConsole] = "Log Console",
+                [L10nKey.ClearLogs] = "Clear Logs",
+                [L10nKey.AutoScroll] = "Auto Scroll",
+                [L10nKey.LogDetails] = "Details",
+                [L10nKey.NoDetails] = "No details"
             };
         }
 
@@ -461,6 +481,8 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 [L10nKey.CloneRootOnApplyTooltip] = "適用時にルートを複製して元を保持します。",
                 [L10nKey.DeactivateOriginalRoot] = "元のルートを無効化",
                 [L10nKey.DeactivateOriginalRootTooltip] = "複製後に元のルートを無効化します。",
+                [L10nKey.KeepPrefabOnClone] = "複製時にプレハブを維持",
+                [L10nKey.KeepPrefabOnCloneTooltip] = "複製時にプレハブ状態を維持します（メッシュ/マテリアルのみ置換）。",
                 [L10nKey.ApplySummaryCloneDeactivate] = "複製に適用し、元を無効化します。",
                 [L10nKey.ApplySummaryCloneKeep] = "複製に適用し、元を保持します。",
                 [L10nKey.ApplySummaryDirect] = "選択したルートに直接適用します。",
@@ -623,7 +645,15 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 [L10nKey.LanguageSettings] = "言語設定",
                 [L10nKey.LanguageKorean] = "한국어",
                 [L10nKey.LanguageEnglish] = "English",
-                [L10nKey.LanguageJapanese] = "日本語"
+                [L10nKey.LanguageJapanese] = "日本語",
+
+                // Log Console
+                [L10nKey.ShowLogConsole] = "ログコンソール",
+                [L10nKey.LogConsole] = "ログコンソール",
+                [L10nKey.ClearLogs] = "ログをクリア",
+                [L10nKey.AutoScroll] = "自動スクロール",
+                [L10nKey.LogDetails] = "詳細情報",
+                [L10nKey.NoDetails] = "詳細情報なし"
             };
         }
     }

@@ -84,6 +84,11 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                         Localization.Get(L10nKey.DeactivateOriginalRootTooltip));
                     state.deactivateOriginalRoot = EditorGUILayout.ToggleLeft(deactivateContent,
                         state.deactivateOriginalRoot, GUILayout.Width(160));
+                    
+                    var keepPrefabContent = new GUIContent(Localization.Get(L10nKey.KeepPrefabOnClone),
+                        Localization.Get(L10nKey.KeepPrefabOnCloneTooltip));
+                    state.keepPrefabOnClone = EditorGUILayout.ToggleLeft(keepPrefabContent,
+                        state.keepPrefabOnClone, GUILayout.Width(150));
                 }
             }
 

@@ -24,6 +24,7 @@ namespace K13A.MaterialMerger.Editor.Core
         // 적용 설정
         public bool cloneRootOnApply = true;
         public bool deactivateOriginalRoot = true;
+        public bool keepPrefabOnClone = true;
 
         // 아틀라스 설정
         public int atlasSize = 8192;
@@ -38,6 +39,7 @@ namespace K13A.MaterialMerger.Editor.Core
         // UI 상태
         public bool globalFoldout = true;
         public Vector2 scroll;
+        public bool showLogConsole = false;
 
         // 스캔 결과
         public List<GroupScan> scans = new List<GroupScan>();

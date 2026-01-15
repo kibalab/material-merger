@@ -6,6 +6,7 @@ using UnityEngine;
 using K13A.MaterialMerger.Editor.Models;
 using K13A.MaterialMerger.Editor.Services;
 using K13A.MaterialMerger.Editor.Services.Localization;
+using K13A.MaterialMerger.Editor.Services.Logging;
 using K13A.MaterialMerger.Editor.UI.Components;
 
 namespace K13A.MaterialMerger.Editor.Core
@@ -27,11 +28,14 @@ namespace K13A.MaterialMerger.Editor.Core
         private IAtlasGenerator atlasGenerator;
         private IMeshRemapper meshRemapper;
         private ILocalizationService localizationService;
+        private ILoggingService loggingService;
 
         // UI Renderers
         private TopPanelRenderer topPanel;
         private GlobalSettingsPanelRenderer globalPanel;
         private GroupListRenderer groupList;
+        private LogConsoleRenderer logConsole;
+        private LogFooterRenderer logFooter;
 
         [MenuItem("Kiba/렌더링/멀티 아틀라스 머저")]
         static void Open()
@@ -67,18 +71,50 @@ namespace K13A.MaterialMerger.Editor.Core
         {
             styles.EnsureStyles();
 
+            // 로그 콘솔이 열려있으면 콘솔만 표시
+            if (state.showLogConsole)
+            {
+                bool shouldClose = logConsole.DrawLogConsole(position);
+                
+                // ESC 키 또는 X 버튼으로 콘솔 닫기
+                if (shouldClose || (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Escape))
+                {
+                    state.showLogConsole = false;
+                    if (Event.current.type == EventType.KeyDown)
+                        Event.current.Use();
+                    Repaint();
+                }
+                return;
+            }
+
             EditorGUI.BeginChangeCheck();
 
+            // Footer 높이를 고려한 스크롤 영역
+            float footerHeight = logFooter.GetHeight();
+            Rect contentRect = new Rect(0, 0, position.width, position.height - footerHeight);
+
+            // 메인 콘텐츠 영역
+            GUILayout.BeginArea(contentRect);
+            
             topPanel.DrawTopPanel(state, OnScan, OnBuildWithConfirm, OnRootChanged, OnOutputFolderChanged, OnLanguageChanged);
             EditorGUILayout.Space(8);
             globalPanel.DrawGlobalSettings(state);
             EditorGUILayout.Space(8);
             groupList.DrawGroupList(state.scans, ref state.scroll);
+            
+            GUILayout.EndArea();
 
             var changed = EditorGUI.EndChangeCheck();
             if (changed && !state.suppressAutosaveOnce)
                 RequestSave();
             state.suppressAutosaveOnce = false;
+
+            // Footer 바 렌더링
+            if (logFooter.DrawFooter(position))
+            {
+                state.showLogConsole = true;
+                Repaint();
+            }
         }
 
         #region Initialization
@@ -93,11 +129,15 @@ namespace K13A.MaterialMerger.Editor.Core
             // Localization service (must be first as other services may use it)
             localizationService = new LocalizationService();
 
+            // Logging service
+            loggingService = new LoggingService();
+            loggingService.OnLogAdded += (entry) => Repaint();
+
             // 기본 서비스 생성
             atlasGenerator = new AtlasGenerator();
             textureProcessor = new TextureProcessor();
             meshRemapper = new MeshRemapper();
-            scanService = new MaterialScanService();
+            scanService = new MaterialScanService { LoggingService = loggingService };
             profileService = new ProfileService();
 
             // BuildService에 의존성 주입
@@ -107,7 +147,8 @@ namespace K13A.MaterialMerger.Editor.Core
                 TextureProcessor = textureProcessor,
                 MeshRemapper = meshRemapper,
                 ScanService = scanService,
-                LocalizationService = localizationService
+                LocalizationService = localizationService,
+                LoggingService = loggingService
             };
         }
 
@@ -122,6 +163,8 @@ namespace K13A.MaterialMerger.Editor.Core
             groupList = new GroupListRenderer { Styles = styles, GroupRenderer = groupPanel, Localization = localizationService };
             globalPanel = new GlobalSettingsPanelRenderer { Styles = styles, Localization = localizationService };
             topPanel = new TopPanelRenderer { Styles = styles, Localization = localizationService };
+            logConsole = new LogConsoleRenderer { Styles = styles, Localization = localizationService, LoggingService = loggingService };
+            logFooter = new LogFooterRenderer { Localization = localizationService, LoggingService = loggingService };
         }
 
         #endregion
@@ -130,11 +173,21 @@ namespace K13A.MaterialMerger.Editor.Core
 
         private void OnScan()
         {
+            loggingService.Info("═══════════════════════════════════════", null, true);
+            loggingService.Info("    Scan Started", $"Target: {(state.root ? state.root.name : "None")}", true);
+            loggingService.Info("═══════════════════════════════════════", null, true);
+
             if (state.root)
+            {
+                loggingService.Info("Checking profile");
                 state.profile = profileService.EnsureProfile(state.root, true);
+            }
 
             if (state.profile)
+            {
                 state.profile.lastScanTicksUtc = DateTime.UtcNow.Ticks;
+                loggingService.Info("Updated profile timestamp");
+            }
 
             state.scans = scanService.ScanGameObject(
                 state.root,
@@ -144,13 +197,21 @@ namespace K13A.MaterialMerger.Editor.Core
                 state.grid
             );
 
+            loggingService.Info("Sorting groups");
             state.scans = state.scans
                 .OrderBy(x => x.key.shader ? x.key.shader.name : "")
                 .ThenBy(x => x.tag)
                 .ToList();
 
+            loggingService.Info("Applying profile settings");
             profileService.ApplyProfileToScans(state.profile, state.scans);
+            
+            loggingService.Info("Saving scan results");
             RequestSave();
+            
+            loggingService.Info("═══════════════════════════════════════", null, true);
+            loggingService.Success($"    Scan Complete: {state.scans.Count} groups", null, true);
+            loggingService.Info("═══════════════════════════════════════", null, true);
             Repaint();
         }
 
@@ -175,6 +236,7 @@ namespace K13A.MaterialMerger.Editor.Core
                 state.diffSampleMaterial,
                 state.cloneRootOnApply,
                 state.deactivateOriginalRoot,
+                state.keepPrefabOnClone,
                 state.outputFolder,
                 state.atlasSize,
                 state.grid,
@@ -230,6 +292,7 @@ namespace K13A.MaterialMerger.Editor.Core
 
             state.cloneRootOnApply = state.profile.cloneRootOnApply;
             state.deactivateOriginalRoot = state.profile.deactivateOriginalRoot;
+            state.keepPrefabOnClone = state.profile.keepPrefabOnClone;
 
             state.atlasSize = state.profile.atlasSize;
             state.grid = state.profile.grid;
@@ -280,6 +343,7 @@ namespace K13A.MaterialMerger.Editor.Core
 
             state.profile.cloneRootOnApply = state.cloneRootOnApply;
             state.profile.deactivateOriginalRoot = state.deactivateOriginalRoot;
+            state.profile.keepPrefabOnClone = state.keepPrefabOnClone;
 
             state.profile.atlasSize = state.atlasSize;
             state.profile.grid = state.grid;

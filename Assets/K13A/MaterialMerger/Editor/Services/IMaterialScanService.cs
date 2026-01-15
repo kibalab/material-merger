@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using K13A.MaterialMerger.Editor.Models;
+using K13A.MaterialMerger.Editor.Services.Logging;
 
 namespace K13A.MaterialMerger.Editor.Services
 {
     public interface IMaterialScanService
     {
+        ILoggingService LoggingService { get; set; }
         /// <summary>
         /// GameObject 계층에서 모든 Renderer 수집
         /// </summary>

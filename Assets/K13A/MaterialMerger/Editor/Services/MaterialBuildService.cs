@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using K13A.MaterialMerger.Editor.Models;
 using K13A.MaterialMerger.Editor.Services.Localization;
+using K13A.MaterialMerger.Editor.Services.Logging;
 
 namespace K13A.MaterialMerger.Editor.Services
 {
@@ -18,6 +19,7 @@ namespace K13A.MaterialMerger.Editor.Services
         public IMeshRemapper MeshRemapper { get; set; }
         public IMaterialScanService ScanService { get; set; }
         public ILocalizationService LocalizationService { get; set; }
+        public ILoggingService LoggingService { get; set; }
 
         private struct PageTileInfo
         {
@@ -118,6 +120,7 @@ namespace K13A.MaterialMerger.Editor.Services
             Material sampleMaterial,
             bool cloneRootOnApply,
             bool deactivateOriginalRoot,
+            bool keepPrefabOnClone,
             string outputFolder,
             int atlasSize,
             int grid,
@@ -126,18 +129,25 @@ namespace K13A.MaterialMerger.Editor.Services
             bool groupByRenderQueue,
             bool splitOpaqueTransparent)
         {
+            LoggingService?.Info("═══════════════════════════════════════", null, true);
+            LoggingService?.Info("    Build & Apply Started", $"Atlas size: {atlasSize}, Grid: {grid}x{grid}", true);
+            LoggingService?.Info("═══════════════════════════════════════", null, true);
+
             if (TextureProcessor == null || AtlasGenerator == null || MeshRemapper == null || ScanService == null)
             {
+                LoggingService?.Error("Service initialization error", "Required services not initialized", true);
                 EditorUtility.DisplayDialog(LocalizationService.Get(L10nKey.WindowTitle), LocalizationService.Get(L10nKey.DialogServiceNotInitialized), "OK");
                 return;
             }
 
             if (cloneRootOnApply && !root)
             {
+                LoggingService?.Error("Root required", "Clone root on apply is enabled but root is missing", true);
                 EditorUtility.DisplayDialog(LocalizationService.Get(L10nKey.WindowTitle), LocalizationService.Get(L10nKey.DialogRootRequired), "OK");
                 return;
             }
 
+            LoggingService?.Info("Creating output folder", outputFolder);
             Directory.CreateDirectory(outputFolder);
 
             var log = ScriptableObject.CreateInstance<KibaMultiAtlasMergerLog>();
@@ -148,13 +158,20 @@ namespace K13A.MaterialMerger.Editor.Services
             GameObject applyRootObj = root;
             if (cloneRootOnApply && root)
             {
-                applyRootObj = CloneRootForApply(root, deactivateOriginalRoot);
-                if (!applyRootObj) return;
+                LoggingService?.Info("Cloning root", $"Original: {root.name}, KeepPrefab: {keepPrefabOnClone}");
+                applyRootObj = CloneRootForApply(root, deactivateOriginalRoot, keepPrefabOnClone);
+                if (!applyRootObj)
+                {
+                    LoggingService?.Error("Root clone failed");
+                    return;
+                }
+                LoggingService?.Success("Root cloned", $"Clone: {applyRootObj.name}");
             }
 
             log.sourceRootGlobalId = root ? GlobalObjectId.GetGlobalObjectIdSlow(root).ToString() : "";
             log.appliedRootGlobalId = applyRootObj ? GlobalObjectId.GetGlobalObjectIdSlow(applyRootObj).ToString() : "";
 
+            LoggingService?.Info("Rescanning apply target");
             var applyScans = ScanService.ScanGameObject(
                 applyRootObj,
                 groupByKeywords,
@@ -164,6 +181,7 @@ namespace K13A.MaterialMerger.Editor.Services
             );
             CopySettings(scans, applyScans);
             var mergedApplyScans = GroupMergeUtility.BuildMergedScans(applyScans, ScanService);
+            LoggingService?.Info("Rescan complete", $"{mergedApplyScans.Count} groups");
 
             int cell = atlasSize / grid;
             int content = cell - paddingPx * 2;
@@ -176,9 +194,16 @@ namespace K13A.MaterialMerger.Editor.Services
             Undo.IncrementCurrentGroup();
             int ug = Undo.GetCurrentGroup();
 
+            int processedCount = 0;
+            int skippedCount = 0;
+
             foreach (var g in mergedApplyScans)
             {
-                if (!g.enabled) continue;
+                if (!g.enabled)
+                {
+                    skippedCount++;
+                    continue;
+                }
 
                 bool hasUnresolved = g.rows.Any(r =>
                     (r.type == ShaderUtil.ShaderPropertyType.Color ||
@@ -188,34 +213,114 @@ namespace K13A.MaterialMerger.Editor.Services
                     r.distinctCount > 1 && !r.doAction);
 
                 if (hasUnresolved && diffPolicy == DiffPolicy.미해결이면중단)
+                {
+                    LoggingService?.Warning("Group skipped", $"Unresolved diff: {g.shaderName} [{g.tag}]");
+                    skippedCount++;
                     continue;
+                }
 
+                LoggingService?.Info("Building group", $"{g.shaderName} [{g.tag}] - {g.mats.Count} materials");
                 BuildGroup(g, log, cell, content, atlasSize, grid, paddingPx, outputFolder, diffPolicy, sampleMaterial);
+                LoggingService?.Success("Group build complete", $"{g.shaderName} [{g.tag}]");
+                processedCount++;
             }
 
+            LoggingService?.Info("Saving assets");
             EditorUtility.SetDirty(log);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
             Undo.CollapseUndoOperations(ug);
 
+            LoggingService?.Info("═══════════════════════════════════════", null, true);
+            LoggingService?.Success("    Build & Apply Complete", $"Processed: {processedCount}, Skipped: {skippedCount}", true);
+            LoggingService?.Info("═══════════════════════════════════════", null, true);
+            
             var message = $"{LocalizationService.Get(L10nKey.DialogComplete)}\n{LocalizationService.Get(L10nKey.DialogLog, logPath)}";
             EditorUtility.DisplayDialog(LocalizationService.Get(L10nKey.WindowTitle), message, "OK");
         }
 
-        public GameObject CloneRootForApply(GameObject src, bool deactivateOriginal)
+        public GameObject CloneRootForApply(GameObject src, bool deactivateOriginal, bool keepPrefab)
         {
             var parent = src.transform.parent;
-            var clone = UnityEngine.Object.Instantiate(src, parent);
+            GameObject clone;
+
+            // 프리팹 유지 옵션이 켜져있고 프리팹 인스턴스인 경우
+            if (keepPrefab && PrefabUtility.IsPartOfPrefabInstance(src))
+            {
+                LoggingService?.Info("Cloning as prefab instance");
+                
+                try
+                {
+                    // 프리팹 루트인지 확인
+                    var prefabInstanceRoot = PrefabUtility.GetOutermostPrefabInstanceRoot(src);
+                    
+                    if (prefabInstanceRoot == src)
+                    {
+                        // src가 프리팹 루트인 경우
+                        // 원본 프리팹 에셋 가져오기
+                        var prefabAssetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(src);
+                        
+                        if (!string.IsNullOrEmpty(prefabAssetPath))
+                        {
+                            var prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(prefabAssetPath);
+                            if (prefabAsset != null)
+                            {
+                                // 프리팹 에셋으로부터 새 인스턴스 생성
+                                var instantiated = PrefabUtility.InstantiatePrefab(prefabAsset, parent);
+                                clone = instantiated as GameObject;
+                                
+                                if (clone != null)
+                                {
+                                    LoggingService?.Success("Prefab instance created successfully");
+                                }
+                                else
+                                {
+                                    LoggingService?.Warning("Prefab instantiation returned non-GameObject, falling back");
+                                    clone = UnityEngine.Object.Instantiate(src, parent);
+                                }
+                            }
+                            else
+                            {
+                                LoggingService?.Warning("Failed to load prefab asset, falling back to regular clone");
+                                clone = UnityEngine.Object.Instantiate(src, parent);
+                            }
+                        }
+                        else
+                        {
+                            LoggingService?.Warning("Failed to get prefab asset path, falling back to regular clone");
+                            clone = UnityEngine.Object.Instantiate(src, parent);
+                        }
+                    }
+                    else
+                    {
+                        // src가 프리팹의 자식인 경우 - 일반 복제 사용
+                        LoggingService?.Warning("Source is not a prefab root, falling back to regular clone");
+                        clone = UnityEngine.Object.Instantiate(src, parent);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LoggingService?.Error("Exception during prefab clone", ex.Message);
+                    clone = UnityEngine.Object.Instantiate(src, parent);
+                }
+            }
+            else
+            {
+                LoggingService?.Info("Cloning as regular instance (unpacked)");
+                // 일반 복제 (프리팹 언팩)
+                clone = UnityEngine.Object.Instantiate(src, parent);
+            }
+
             clone.name = src.name + "_AtlasMerged";
             clone.transform.localPosition = src.transform.localPosition;
             clone.transform.localRotation = src.transform.localRotation;
             clone.transform.localScale = src.transform.localScale;
-            Undo.RegisterCreatedObjectUndo(clone, "루트 복제");
+            Undo.RegisterCreatedObjectUndo(clone, "Clone root");
 
             if (deactivateOriginal)
             {
-                Undo.RecordObject(src, "원본 루트 비활성화");
+                Undo.RecordObject(src, "Deactivate original root");
                 src.SetActive(false);
             }
 
@@ -311,13 +416,17 @@ namespace K13A.MaterialMerger.Editor.Services
             DiffPolicy diffPolicy,
             Material sampleMaterial)
         {
+            LoggingService?.Info($"Preparing group build: {g.shaderName}", $"Materials: {g.mats.Count}, Pages: {g.pageCount}");
+
             // Blit 머티리얼 초기화 (텍스처 샘플링에 필요)
             string blitShaderPath = Path.Combine(outputFolder, "Hidden_KibaAtlasBlit.shader").Replace("\\", "/");
+            LoggingService?.Info("Checking blit shader", blitShaderPath);
             TextureProcessor.EnsureBlitMaterial(blitShaderPath);
 
             string planFolder = GetPlanFolderName(g);
             string groupFolder = Path.Combine(outputFolder, planFolder).Replace("\\", "/");
             Directory.CreateDirectory(groupFolder);
+            LoggingService?.Info($"Created output folder: {planFolder}");
 
             var mats = g.mats.ToList();
             int tilesPerPage = g.tilesPerPage;
@@ -325,16 +434,19 @@ namespace K13A.MaterialMerger.Editor.Services
             var texMeta = g.rows.Where(r => r.type == ShaderUtil.ShaderPropertyType.TexEnv).ToDictionary(r => r.name, r => r, StringComparer.Ordinal);
 
             var enabledTexProps = g.rows.Where(r => r.type == ShaderUtil.ShaderPropertyType.TexEnv && r.doAction).Select(r => r.name).ToList();
+            LoggingService?.Info($"Active texture properties: {enabledTexProps.Count}", string.Join(", ", enabledTexProps));
 
             var bakeRows = g.rows.Where(r =>
                 r.doAction &&
                 r.type != ShaderUtil.ShaderPropertyType.TexEnv &&
                 (r.bakeMode == BakeMode.색상굽기_텍스처타일 || r.bakeMode == BakeMode.스칼라굽기_그레이타일 || r.bakeMode == BakeMode.색상곱_텍스처타일)).ToList();
+            LoggingService?.Info($"Bake properties: {bakeRows.Count}");
 
             var resetRows = g.rows.Where(r =>
                 r.doAction &&
                 r.type != ShaderUtil.ShaderPropertyType.TexEnv &&
                 r.bakeMode == BakeMode.리셋_쉐이더기본값).ToList();
+            LoggingService?.Info($"Reset properties: {resetRows.Count}");
 
             var allAtlasProps = new HashSet<string>(enabledTexProps, StringComparer.Ordinal);
             foreach (var r in bakeRows)
@@ -342,15 +454,20 @@ namespace K13A.MaterialMerger.Editor.Services
                 if (string.IsNullOrEmpty(r.targetTexProp)) continue;
                 allAtlasProps.Add(r.targetTexProp);
             }
+            LoggingService?.Info($"Total atlas properties: {allAtlasProps.Count}", string.Join(", ", allAtlasProps));
 
             var pageInfos = new List<PageBuildInfo>();
             var matToPage = new Dictionary<Material, PageTileInfo>();
 
+            LoggingService?.Info($"Creating pages: {g.pageCount}");
             for (int page = 0; page < g.pageCount; page++)
             {
+                LoggingService?.Info($"Processing page {page + 1}/{g.pageCount}");
+                
                 int start = page * tilesPerPage;
                 int end = Mathf.Min(mats.Count, start + tilesPerPage);
                 var pageItems = mats.GetRange(start, end - start);
+                LoggingService?.Info($"  Page materials: {pageItems.Count}");
 
                 string pageFolder = g.pageCount > 1
                     ? Path.Combine(groupFolder, $"Page_{page:00}").Replace("\\", "/")
@@ -391,6 +508,9 @@ namespace K13A.MaterialMerger.Editor.Services
 
                 var atlasByProp = new Dictionary<string, Texture2D>(StringComparer.Ordinal);
 
+                LoggingService?.Info($"  Creating atlas textures: {allAtlasProps.Count}", 
+                    $"Size: {actualAtlasSize}x{actualAtlasSize}, Grid: {actualGridCols}x{actualGridRows}");
+                
                 foreach (var prop in allAtlasProps)
                 {
                     bool normalLike = texMeta.TryGetValue(prop, out var meta) ? meta.isNormalLike : IsNormalLikeProperty(prop);
@@ -399,8 +519,10 @@ namespace K13A.MaterialMerger.Editor.Services
 
                     // 정사각형 아틀라스 생성 (UV 찌그러짐 방지)
                     atlasByProp[prop] = AtlasGenerator.CreateAtlas(actualAtlasSize, sRGB);
+                    LoggingService?.Info($"    Created atlas: {prop} ({(sRGB ? "sRGB" : "Linear")}{(normalLike ? ", Normal" : "")})");
                 }
 
+                LoggingService?.Info($"  Baking tiles: {pageItems.Count}");
                 for (int i = 0; i < pageItems.Count; i++)
                 {
                     int gx = i % actualGridCols;
@@ -480,17 +602,20 @@ namespace K13A.MaterialMerger.Editor.Services
                     }
                 }
 
+                LoggingService?.Info($"  Saving atlas textures: {atlasByProp.Count}");
                 foreach (var kv in atlasByProp)
                 {
                     kv.Value.Apply(true, false);
                     string p = AtlasGenerator.SaveAtlasPNG(kv.Value, pageFolder, $"{AtlasGenerator.SanitizeFileName(kv.Key)}.png");
                     log.createdAssetPaths.Add(p);
+                    LoggingService?.Info($"    Saved: {kv.Key} → {System.IO.Path.GetFileName(p)}");
 
                     bool normalLike = texMeta.TryGetValue(kv.Key, out var meta) ? meta.isNormalLike : IsNormalLikeProperty(kv.Key);
                     bool sRGB = texMeta.TryGetValue(kv.Key, out meta) ? meta.isSRGB : !IsLinearProperty(kv.Key);
                     AtlasGenerator.ConfigureImporter(p, atlasSize, sRGB, normalLike);
                 }
 
+                LoggingService?.Info($"  Creating merged material");
                 var template = pageItems[0].mat;
                 var merged = new Material(template);
 
@@ -549,6 +674,7 @@ namespace K13A.MaterialMerger.Editor.Services
                 string matPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(pageFolder, matFile).Replace("\\", "/"));
                 AssetDatabase.CreateAsset(merged, matPath);
                 log.createdAssetPaths.Add(matPath);
+                LoggingService?.Info($"  Saved material: {System.IO.Path.GetFileName(matPath)}");
 
                 pageInfos.Add(new PageBuildInfo
                 {
@@ -556,11 +682,19 @@ namespace K13A.MaterialMerger.Editor.Services
                     gridCols = actualGridCols,
                     mergedMaterial = merged
                 });
+                
+                LoggingService?.Success($"Page {page + 1}/{g.pageCount} complete");
             }
 
-            if (matToPage.Count == 0 || pageInfos.Count == 0) return;
+            if (matToPage.Count == 0 || pageInfos.Count == 0)
+            {
+                LoggingService?.Warning("No material/page info to apply");
+                return;
+            }
 
+            LoggingService?.Info("Applying materials to renderers");
             ApplyToRenderers(g, matToPage, pageInfos, log, cell, content, paddingPx, outputFolder);
+            LoggingService?.Success($"Group build complete: {g.shaderName}");
         }
 
         private void ApplySampleMaterialOverrides(GroupScan g, Material merged, Material sampleMaterial)
@@ -597,7 +731,10 @@ namespace K13A.MaterialMerger.Editor.Services
                     if (u)
                         renderers.Add(u);
 
+            LoggingService?.Info($"  Renderers to process: {renderers.Count}");
+
             var meshCache = new Dictionary<(Mesh, string), Mesh>();
+            int processedRenderers = 0;
 
             foreach (var r in renderers)
             {
@@ -730,7 +867,15 @@ namespace K13A.MaterialMerger.Editor.Services
                 entry.beforeMesh = beforeMesh;
                 entry.afterMesh = afterMesh;
                 log.entries.Add(entry);
+
+                processedRenderers++;
+                if (processedRenderers % 10 == 0 || processedRenderers == renderers.Count)
+                {
+                    LoggingService?.Info($"    Renderer progress: {processedRenderers}/{renderers.Count}");
+                }
             }
+
+            LoggingService?.Success($"  Renderers processed: {processedRenderers}");
         }
 
         private string GetPlanFolderName(GroupScan g)

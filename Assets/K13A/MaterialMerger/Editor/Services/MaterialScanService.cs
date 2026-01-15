@@ -5,11 +5,13 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using K13A.MaterialMerger.Editor.Models;
+using K13A.MaterialMerger.Editor.Services.Logging;
 
 namespace K13A.MaterialMerger.Editor.Services
 {
     public class MaterialScanService : IMaterialScanService
     {
+        public ILoggingService LoggingService { get; set; }
         public List<Renderer> CollectRenderers(GameObject root)
         {
             if (!root) return new List<Renderer>();
@@ -42,16 +44,23 @@ namespace K13A.MaterialMerger.Editor.Services
 
         public List<GroupScan> ScanGameObject(GameObject root, bool groupByKeywords, bool groupByRenderQueue, bool splitOpaqueTransparent, int grid)
         {
+            LoggingService?.Info($"Scanning: {(root ? root.name : "null")}", $"Options - Keywords:{groupByKeywords}, RQ:{groupByRenderQueue}, Transparency:{splitOpaqueTransparent}");
+
             var result = new List<GroupScan>();
             var renderers = CollectRenderers(root);
+            
+            LoggingService?.Info($"Collected {renderers.Count} renderers");
 
             var groups = new Dictionary<GroupKey, Dictionary<Material, MatInfo>>();
+            int totalMaterialSlots = 0;
 
             foreach (var r in renderers)
             {
                 if (!r) continue;
                 var mats = r.sharedMaterials;
                 if (mats == null) continue;
+
+                totalMaterialSlots += mats.Length;
 
                 for (int i = 0; i < mats.Length; i++)
                 {
@@ -64,6 +73,7 @@ namespace K13A.MaterialMerger.Editor.Services
                     {
                         dict = new Dictionary<Material, MatInfo>();
                         groups[key] = dict;
+                        LoggingService?.Info($"New group: {(key.shader ? key.shader.name : "null")} [{(key.transparencyKey == 1 ? "Transparent" : "Opaque")}]");
                     }
 
                     if (!dict.TryGetValue(m, out var mi))
@@ -75,6 +85,8 @@ namespace K13A.MaterialMerger.Editor.Services
                     mi.users.Add(r);
                 }
             }
+
+            LoggingService?.Info($"Material analysis complete", $"Total slots: {totalMaterialSlots}, Groups: {groups.Count}");
 
             int tilesPerPage = grid * grid;
 
@@ -89,6 +101,8 @@ namespace K13A.MaterialMerger.Editor.Services
                 g.mats = kv.Value.Values.ToList();
                 g.pageCount = Mathf.CeilToInt(g.mats.Count / (float)tilesPerPage);
 
+                LoggingService?.Info($"Analyzing group: {g.shaderName}", $"{g.mats.Count} materials, {g.pageCount} pages");
+
                 g.shaderTexProps = GetShaderPropertiesByType(g.key.shader, ShaderUtil.ShaderPropertyType.TexEnv);
                 g.shaderScalarProps = GetShaderPropertiesByType(g.key.shader, ShaderUtil.ShaderPropertyType.Float)
                     .Concat(GetShaderPropertiesByType(g.key.shader, ShaderUtil.ShaderPropertyType.Range))
@@ -98,9 +112,13 @@ namespace K13A.MaterialMerger.Editor.Services
                 g.rows = BuildPropertyRows(g);
                 g.skippedMultiMat = EstimateMultiMaterialSkips(g);
 
+                LoggingService?.Info($"Group analysis complete: {g.shaderName}", 
+                    $"Texture props: {g.shaderTexProps.Count}, Scalar props: {g.shaderScalarProps.Count}, Rows: {g.rows.Count}");
+
                 result.Add(g);
             }
 
+            LoggingService?.Success($"Scan complete: {result.Count} groups created");
             return result;
         }
 

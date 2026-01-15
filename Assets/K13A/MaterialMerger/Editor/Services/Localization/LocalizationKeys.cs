@@ -37,8 +37,10 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
         public const string ApplicationMethod = "global.application_method";
         public const string CloneRootOnApply = "global.clone_root_on_apply";
         public const string DeactivateOriginalRoot = "global.deactivate_original_root";
+        public const string KeepPrefabOnClone = "global.keep_prefab_on_clone";
         public const string CloneRootOnApplyTooltip = "global.clone_root_on_apply_tooltip";
         public const string DeactivateOriginalRootTooltip = "global.deactivate_original_root_tooltip";
+        public const string KeepPrefabOnCloneTooltip = "global.keep_prefab_on_clone_tooltip";
         public const string ApplySummaryCloneDeactivate = "global.apply_summary_clone_deactivate";
         public const string ApplySummaryCloneKeep = "global.apply_summary_clone_keep";
         public const string ApplySummaryDirect = "global.apply_summary_direct";
@@ -205,6 +207,14 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
         public const string LanguageKorean = "language.korean";
         public const string LanguageEnglish = "language.english";
         public const string LanguageJapanese = "language.japanese";
+
+        // Log Console
+        public const string ShowLogConsole = "log.show_console";
+        public const string LogConsole = "log.console";
+        public const string ClearLogs = "log.clear_logs";
+        public const string AutoScroll = "log.auto_scroll";
+        public const string LogDetails = "log.details";
+        public const string NoDetails = "log.no_details";
     }
 }
 #endif
