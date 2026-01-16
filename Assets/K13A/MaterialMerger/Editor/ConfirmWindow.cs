@@ -4,10 +4,14 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using K13A.MaterialMerger.Editor.Core;
 using K13A.MaterialMerger.Editor.Services.Localization;
 
 namespace K13A.MaterialMerger.Editor
 {
+    /// <summary>
+    /// Confirmation window shown before build execution
+    /// </summary>
     public class ConfirmWindow : EditorWindow
     {
         [Serializable]
@@ -20,15 +24,27 @@ namespace K13A.MaterialMerger.Editor
             public List<string> generatedProps = new List<string>();
         }
 
-        dynamic owner;
-        List<GroupInfo> groups;
-        Vector2 scroll;
-        ILocalizationService localization;
+        private IBuildExecutor buildExecutor;
+        private List<GroupInfo> groups;
+        private Vector2 scroll;
+        private ILocalizationService localization;
 
-        public static void Open(dynamic owner, List<GroupInfo> groups, ILocalizationService localization)
+        /// <summary>
+        /// Open the confirmation window
+        /// </summary>
+        /// <param name="executor">Build executor (must implement IBuildExecutor)</param>
+        /// <param name="groups">Group information to display</param>
+        /// <param name="localization">Localization service</param>
+        public static void Open(IBuildExecutor executor, List<GroupInfo> groups, ILocalizationService localization)
         {
+            if (executor == null)
+            {
+                Debug.LogError("ConfirmWindow.Open: executor cannot be null");
+                return;
+            }
+            
             var w = CreateInstance<ConfirmWindow>();
-            w.owner = owner;
+            w.buildExecutor = executor;
             w.groups = groups ?? new List<GroupInfo>();
             w.localization = localization ?? new LocalizationService();
             w.titleContent = new GUIContent(w.localization.Get(L10nKey.ConfirmTitle));
@@ -38,7 +54,7 @@ namespace K13A.MaterialMerger.Editor
 
         void OnGUI()
         {
-            if (owner == null)
+            if (buildExecutor == null)
             {
                 EditorGUILayout.HelpBox(localization.Get(L10nKey.RollbackOwnerClosed), MessageType.Error);
                 if (GUILayout.Button(localization.Get(L10nKey.Close), GUILayout.Height(28))) Close();
@@ -105,7 +121,7 @@ namespace K13A.MaterialMerger.Editor
                     if (GUILayout.Button(localization.Get(L10nKey.Execute), GUILayout.Height(32)))
                     {
                         Close();
-                        owner.BuildAndApply();
+                        buildExecutor.BuildAndApply();
                     }
                 }
             }

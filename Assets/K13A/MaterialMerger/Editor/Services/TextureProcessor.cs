@@ -93,23 +93,23 @@ namespace K13A.MaterialMerger.Editor.Services
 
         public Color ApplyModifierToColor(Color color, float modValue, Row row)
         {
-            if (row.modOp == ModOp.없음) return color;
+            if (row.modOp == ModOp.None) return color;
 
-            if (row.modOp == ModOp.곱셈)
+            if (row.modOp == ModOp.Multiply)
             {
                 color.r *= modValue;
                 color.g *= modValue;
                 color.b *= modValue;
                 if (row.modAffectsAlpha) color.a *= modValue;
             }
-            else if (row.modOp == ModOp.가산)
+            else if (row.modOp == ModOp.Add)
             {
                 color.r += modValue;
                 color.g += modValue;
                 color.b += modValue;
                 if (row.modAffectsAlpha) color.a += modValue;
             }
-            else if (row.modOp == ModOp.감산)
+            else if (row.modOp == ModOp.Subtract)
             {
                 color.r -= modValue;
                 color.g -= modValue;
@@ -126,17 +126,17 @@ namespace K13A.MaterialMerger.Editor.Services
 
         public float ApplyModifierToScalar(float value, float modValue, Row row)
         {
-            if (row.modOp == ModOp.없음) return value;
-            if (row.modOp == ModOp.곱셈) value *= modValue;
-            else if (row.modOp == ModOp.가산) value += modValue;
-            else if (row.modOp == ModOp.감산) value -= modValue;
+            if (row.modOp == ModOp.None) return value;
+            if (row.modOp == ModOp.Multiply) value *= modValue;
+            else if (row.modOp == ModOp.Add) value += modValue;
+            else if (row.modOp == ModOp.Subtract) value -= modValue;
             return value;
         }
 
         public float EvaluateModifier(Material material, Row row)
         {
-            if (row.modOp == ModOp.없음) return 0f;
-            float defaultValue = (row.modOp == ModOp.곱셈) ? 1f : 0f;
+            if (row.modOp == ModOp.None) return 0f;
+            float defaultValue = (row.modOp == ModOp.Multiply) ? 1f : 0f;
             float value = defaultValue;
 
             if (material && !string.IsNullOrEmpty(row.modProp) && material.HasProperty(row.modProp))

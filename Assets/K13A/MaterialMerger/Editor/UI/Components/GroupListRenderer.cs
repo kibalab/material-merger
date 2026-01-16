@@ -18,8 +18,6 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         public GroupPanelRenderer GroupRenderer { get; set; }
         public ILocalizationService Localization { get; set; }
 
-        private const float MergeIndent = 16f;
-
         private readonly Dictionary<GroupKey, Rect> headerRects = new Dictionary<GroupKey, Rect>();
         private readonly Dictionary<GroupKey, Rect> handleRects = new Dictionary<GroupKey, Rect>();
         private readonly List<GroupRect> groupRects = new List<GroupRect>();
@@ -86,7 +84,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
 
                 bool isChild = mergeRootByGroup.TryGetValue(group, out var root) && root != null && root != group;
                 int childCount = mergeChildCount.TryGetValue(group, out var count) ? count : 0;
-                float indent = isChild ? MergeIndent : 0f;
+                float indent = isChild ? Constants.MergeIndent : 0f;
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
@@ -464,7 +462,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                 }
 
                 safety++;
-            } while (adjusted && safety < 5);
+            } while (adjusted && safety < Constants.MaxDragAdjustIterations);
 
             return clamped;
         }

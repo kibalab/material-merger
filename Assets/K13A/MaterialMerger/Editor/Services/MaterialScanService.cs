@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using K13A.MaterialMerger.Editor.Core;
 using K13A.MaterialMerger.Editor.Models;
 using K13A.MaterialMerger.Editor.Services.Logging;
 
@@ -21,7 +22,7 @@ namespace K13A.MaterialMerger.Editor.Services
         public bool IsTransparent(Material material)
         {
             if (!material) return false;
-            if (material.renderQueue >= 3000) return true;
+            if (material.renderQueue >= Constants.TransparentRenderQueueThreshold) return true;
             var tag = material.GetTag("RenderType", false, "");
             if (!string.IsNullOrEmpty(tag) && (tag.IndexOf("Transparent", StringComparison.OrdinalIgnoreCase) >= 0 || tag.IndexOf("Fade", StringComparison.OrdinalIgnoreCase) >= 0))
                 return true;
@@ -158,7 +159,7 @@ namespace K13A.MaterialMerger.Editor.Services
                         if (!hitMat) hitMat = m;
                         else if (hitMat != m)
                         {
-                            hits = 999;
+                            hits = Constants.MultiMaterialHitThreshold;
                             break;
                         }
                     }
@@ -194,7 +195,7 @@ namespace K13A.MaterialMerger.Editor.Services
                 row.includeAlpha = false;
                 row.resetSourceAfterBake = true;
 
-                row.modOp = ModOp.없음;
+                row.modOp = ModOp.None;
                 row.modPropIndex = 0;
                 row.modProp = "";
                 row.modClamp01 = true;
@@ -323,11 +324,11 @@ namespace K13A.MaterialMerger.Editor.Services
                     set.Add($"{m.GetFloat(name):F6}");
                 }
 
-                if (set.Count > 64) break;
+                if (set.Count > Constants.MaxDistinctValuesToCollect) break;
             }
 
             row.distinctCount = set.Count;
-            row.bakeMode = BakeMode.리셋_쉐이더기본값;
+            row.bakeMode = BakeMode.ResetToDefault;
             row.targetTexIndex = 0;
             row.targetTexProp = group.shaderTexProps.Count > 0 ? group.shaderTexProps[0] : "";
             row.doAction = false;

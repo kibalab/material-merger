@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
+using K13A.MaterialMerger.Editor.Core;
 using K13A.MaterialMerger.Editor.Models;
 using K13A.MaterialMerger.Editor.Services.Localization;
 using K13A.MaterialMerger.Editor.Services.Logging;
@@ -43,7 +44,7 @@ namespace K13A.MaterialMerger.Editor.Services
         }
 
         public void BuildAndApplyWithConfirm(
-            dynamic owner,
+            IBuildExecutor executor,
             GameObject root,
             List<GroupScan> scans,
             DiffPolicy diffPolicy,
@@ -79,7 +80,7 @@ namespace K13A.MaterialMerger.Editor.Services
                      r.type == ShaderUtil.ShaderPropertyType.Vector) &&
                     r.distinctCount > 1 && !r.doAction);
 
-                bool willRun = !(hasUnresolved && diffPolicy == DiffPolicy.미해결이면중단);
+                bool willRun = !(hasUnresolved && diffPolicy == DiffPolicy.StopIfUnresolved);
 
                 var atlasProps = g.rows
                     .Where(r => r.type == ShaderUtil.ShaderPropertyType.TexEnv && r.doAction)
@@ -90,9 +91,9 @@ namespace K13A.MaterialMerger.Editor.Services
                     .ToList();
 
                 bool NeedsTarget(Row r) =>
-                    r.bakeMode == BakeMode.색상굽기_텍스처타일 ||
-                    r.bakeMode == BakeMode.스칼라굽기_그레이타일 ||
-                    r.bakeMode == BakeMode.색상곱_텍스처타일;
+                    r.bakeMode == BakeMode.BakeColorToTexture ||
+                    r.bakeMode == BakeMode.BakeScalarToGrayscale ||
+                    r.bakeMode == BakeMode.MultiplyColorWithTexture;
 
                 var generatedProps = g.rows
                     .Where(r => r.doAction && r.type != ShaderUtil.ShaderPropertyType.TexEnv && NeedsTarget(r))
@@ -118,27 +119,22 @@ namespace K13A.MaterialMerger.Editor.Services
                 return;
             }
 
-            ConfirmWindow.Open(owner, list, LocalizationService);
+            ConfirmWindow.Open(executor, list, LocalizationService);
         }
 
-        public void BuildAndApply(
-            GameObject root,
-            List<GroupScan> scans,
-            DiffPolicy diffPolicy,
-            Material sampleMaterial,
-            bool cloneRootOnApply,
-            bool deactivateOriginalRoot,
-            bool keepPrefabOnClone,
-            string outputFolder,
-            int atlasSize,
-            int grid,
-            int paddingPx,
-            bool groupByKeywords,
-            bool groupByRenderQueue,
-            bool splitOpaqueTransparent)
+        public void BuildAndApply(BuildSettings settings, List<GroupScan> scans)
         {
+            // Validate settings
+            var (isValid, errorMessage) = BuildUtility.ValidateBuildSettings(settings);
+            if (!isValid)
+            {
+                LoggingService?.Error("Invalid build settings", errorMessage, true);
+                EditorUtility.DisplayDialog(LocalizationService.Get(L10nKey.WindowTitle), errorMessage, "OK");
+                return;
+            }
+
             LoggingService?.Info("═══════════════════════════════════════", null, true);
-            LoggingService?.Info("    Build & Apply Started", $"Atlas size: {atlasSize}, Grid: {grid}x{grid}", true);
+            LoggingService?.Info("    Build & Apply Started", $"Atlas size: {settings.AtlasSize}, Grid: {settings.Grid}x{settings.Grid}", true);
             LoggingService?.Info("═══════════════════════════════════════", null, true);
 
             if (TextureProcessor == null || AtlasGenerator == null || MeshRemapper == null || ScanService == null)
@@ -148,17 +144,10 @@ namespace K13A.MaterialMerger.Editor.Services
                 return;
             }
 
-            if (cloneRootOnApply && !root)
-            {
-                LoggingService?.Error("Root required", "Clone root on apply is enabled but root is missing", true);
-                EditorUtility.DisplayDialog(LocalizationService.Get(L10nKey.WindowTitle), LocalizationService.Get(L10nKey.DialogRootRequired), "OK");
-                return;
-            }
+            LoggingService?.Info("Creating output folder", settings.OutputFolder);
+            Directory.CreateDirectory(settings.OutputFolder);
 
-            LoggingService?.Info("Creating output folder", outputFolder);
-            Directory.CreateDirectory(outputFolder);
-
-            string blitShaderPath = Path.Combine(outputFolder, "Hidden_KibaAtlasBlit.shader").Replace("\\", "/");
+            string blitShaderPath = Path.Combine(settings.OutputFolder, Constants.BlitShaderFileName).Replace("\\", "/");
             LoggingService?.Info("Preparing blit material", blitShaderPath);
             TextureProcessor.EnsureBlitMaterial(blitShaderPath);
             if (!TextureProcessor.BlitMaterial)
@@ -168,23 +157,33 @@ namespace K13A.MaterialMerger.Editor.Services
                 return;
             }
 
+            // Use settings values
+            var root = settings.Root;
+            var outputFolder = settings.OutputFolder;
+            var atlasSize = settings.AtlasSize;
+            var grid = settings.Grid;
+            var paddingPx = settings.PaddingPx;
+            var diffPolicy = settings.DiffPolicy;
+            var sampleMaterial = settings.SampleMaterial;
+            var cloneRootOnApply = settings.CloneRootOnApply;
+            var deactivateOriginalRoot = settings.DeactivateOriginalRoot;
+            var keepPrefabOnClone = settings.KeepPrefabOnClone;
+            var groupByKeywords = settings.GroupByKeywords;
+            var groupByRenderQueue = settings.GroupByRenderQueue;
+            var splitOpaqueTransparent = settings.SplitOpaqueTransparent;
+
+            int cell = settings.CellSize;
+            int content = settings.ContentSize;
+
             var log = ScriptableObject.CreateInstance<KibaMultiAtlasMergerLog>();
-            string logPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(outputFolder, $"MultiAtlasLog_{DateTime.Now:yyyyMMdd_HHmmss}.asset").Replace("\\", "/"));
+            string logPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(outputFolder, $"{Constants.LogFilePrefix}{DateTime.Now:yyyyMMdd_HHmmss}.asset").Replace("\\", "/"));
             AssetDatabase.CreateAsset(log, logPath);
             log.createdAssetPaths.Add(logPath);
-
-            int cell = atlasSize / grid;
-            int content = cell - paddingPx * 2;
-            if (content <= 0)
-            {
-                content = cell;
-                paddingPx = 0;
-            }
 
             // ===== PHASE 1: Build all assets (textures and materials) in batch mode =====
             LoggingService?.Info("═══ Phase 1: Building Assets ═══");
             LoggingService?.Info("Starting batch asset creation (editor will remain responsive)");
-            
+
             var groupBuildData = new List<GroupBuildData>();
 
             AssetDatabase.StartAssetEditing();
@@ -192,7 +191,7 @@ namespace K13A.MaterialMerger.Editor.Services
             try
             {
                 var mergedScans = GroupMergeUtility.BuildMergedScans(scans, ScanService);
-                
+
                 int processedCount = 0;
                 int skippedCount = 0;
 
@@ -204,14 +203,7 @@ namespace K13A.MaterialMerger.Editor.Services
                         continue;
                     }
 
-                    bool hasUnresolved = g.rows.Any(r =>
-                        (r.type == ShaderUtil.ShaderPropertyType.Color ||
-                         r.type == ShaderUtil.ShaderPropertyType.Float ||
-                         r.type == ShaderUtil.ShaderPropertyType.Range ||
-                         r.type == ShaderUtil.ShaderPropertyType.Vector) &&
-                        r.distinctCount > 1 && !r.doAction);
-
-                    if (hasUnresolved && diffPolicy == DiffPolicy.미해결이면중단)
+                    if (!BuildUtility.ShouldProcessGroup(g, diffPolicy))
                     {
                         LoggingService?.Warning("Group skipped", $"Unresolved diff: {g.shaderName} [{g.tag}]");
                         skippedCount++;
@@ -220,7 +212,7 @@ namespace K13A.MaterialMerger.Editor.Services
 
                     LoggingService?.Info("Building assets for group", $"{g.shaderName} [{g.tag}]");
                     GroupBuildData buildData = BuildGroupAssets(g, log, cell, content, atlasSize, grid, paddingPx, outputFolder);
-                    
+
                     if (buildData != null)
                     {
                         groupBuildData.Add(buildData);
@@ -245,7 +237,7 @@ namespace K13A.MaterialMerger.Editor.Services
 
             // ===== PHASE 2: Clone root and apply materials to renderers =====
             LoggingService?.Info("═══ Phase 2: Applying to Scene ═══");
-            
+
             GameObject applyRootObj = root;
             if (cloneRootOnApply && root)
             {
@@ -256,6 +248,7 @@ namespace K13A.MaterialMerger.Editor.Services
                     LoggingService?.Error("Root clone failed");
                     return;
                 }
+
                 LoggingService?.Success("Root cloned", $"Clone: {applyRootObj.name}");
             }
 
@@ -280,13 +273,13 @@ namespace K13A.MaterialMerger.Editor.Services
             // Apply to renderers using the build data
             LoggingService?.Info("Applying materials to renderers");
             int appliedCount = 0;
-            
+
             foreach (var buildData in groupBuildData)
             {
                 // Find matching group in applyScans
-                var matchingGroup = mergedApplyScans.FirstOrDefault(g => 
+                var matchingGroup = mergedApplyScans.FirstOrDefault(g =>
                     g.key.Equals(buildData.groupKey) && g.enabled);
-                
+
                 if (matchingGroup != null)
                 {
                     ApplyGroupToRenderers(matchingGroup, buildData, log, cell, content, paddingPx, outputFolder, diffPolicy, sampleMaterial);
@@ -301,7 +294,7 @@ namespace K13A.MaterialMerger.Editor.Services
             LoggingService?.Info("═══════════════════════════════════════", null, true);
             LoggingService?.Success("    Build & Apply Complete", $"Processed: {appliedCount} groups", true);
             LoggingService?.Info("═══════════════════════════════════════", null, true);
-            
+
             var message = $"{LocalizationService.Get(L10nKey.DialogComplete)}\n{LocalizationService.Get(L10nKey.DialogLog, logPath)}";
             EditorUtility.DisplayDialog(LocalizationService.Get(L10nKey.WindowTitle), message, "OK");
         }
@@ -315,18 +308,18 @@ namespace K13A.MaterialMerger.Editor.Services
             if (keepPrefab && PrefabUtility.IsPartOfPrefabInstance(src))
             {
                 LoggingService?.Info("Cloning as prefab instance");
-                
+
                 try
                 {
                     // 프리팹 루트인지 확인
                     var prefabInstanceRoot = PrefabUtility.GetOutermostPrefabInstanceRoot(src);
-                    
+
                     if (prefabInstanceRoot == src)
                     {
                         // src가 프리팹 루트인 경우
                         // 원본 프리팹 에셋 가져오기
                         var prefabAssetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(src);
-                        
+
                         if (!string.IsNullOrEmpty(prefabAssetPath))
                         {
                             var prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(prefabAssetPath);
@@ -335,7 +328,7 @@ namespace K13A.MaterialMerger.Editor.Services
                                 // 프리팹 에셋으로부터 새 인스턴스 생성
                                 var instantiated = PrefabUtility.InstantiatePrefab(prefabAsset, parent);
                                 clone = instantiated as GameObject;
-                                
+
                                 if (clone != null)
                                 {
                                     LoggingService?.Success("Prefab instance created successfully");
@@ -498,27 +491,16 @@ namespace K13A.MaterialMerger.Editor.Services
 
             var texMeta = g.rows.Where(r => r.type == ShaderUtil.ShaderPropertyType.TexEnv).ToDictionary(r => r.name, r => r, StringComparer.Ordinal);
 
-            var enabledTexProps = g.rows.Where(r => r.type == ShaderUtil.ShaderPropertyType.TexEnv && r.doAction).Select(r => r.name).ToList();
+            var enabledTexProps = BuildUtility.GetActiveTextureProperties(g);
             LoggingService?.Info($"Active texture properties: {enabledTexProps.Count}", string.Join(", ", enabledTexProps));
 
-            var bakeRows = g.rows.Where(r =>
-                r.doAction &&
-                r.type != ShaderUtil.ShaderPropertyType.TexEnv &&
-                (r.bakeMode == BakeMode.색상굽기_텍스처타일 || r.bakeMode == BakeMode.스칼라굽기_그레이타일 || r.bakeMode == BakeMode.색상곱_텍스처타일)).ToList();
+            var bakeRows = BuildUtility.GetBakeRows(g);
             LoggingService?.Info($"Bake properties: {bakeRows.Count}");
 
-            var resetRows = g.rows.Where(r =>
-                r.doAction &&
-                r.type != ShaderUtil.ShaderPropertyType.TexEnv &&
-                r.bakeMode == BakeMode.리셋_쉐이더기본값).ToList();
+            var resetRows = BuildUtility.GetResetRows(g);
             LoggingService?.Info($"Reset properties: {resetRows.Count}");
 
-            var allAtlasProps = new HashSet<string>(enabledTexProps, StringComparer.Ordinal);
-            foreach (var r in bakeRows)
-            {
-                if (string.IsNullOrEmpty(r.targetTexProp)) continue;
-                allAtlasProps.Add(r.targetTexProp);
-            }
+            var allAtlasProps = BuildUtility.GetAllAtlasProperties(g);
             LoggingService?.Info($"Total atlas properties: {allAtlasProps.Count}", string.Join(", ", allAtlasProps));
 
             var pageInfos = new List<PageBuildInfo>();
@@ -528,7 +510,7 @@ namespace K13A.MaterialMerger.Editor.Services
             for (int page = 0; page < g.pageCount; page++)
             {
                 LoggingService?.Info($"Processing page {page + 1}/{g.pageCount}");
-                
+
                 int start = page * tilesPerPage;
                 int end = Mathf.Min(mats.Count, start + tilesPerPage);
                 var pageItems = mats.GetRange(start, end - start);
@@ -539,30 +521,12 @@ namespace K13A.MaterialMerger.Editor.Services
                     : groupFolder;
                 Directory.CreateDirectory(pageFolder);
 
-                // 페이지당 실제 머티리얼 수에 맞춰 동적 그리드 계산
+                // Calculate optimal grid for this page using utility
                 int actualMatCount = pageItems.Count;
+                var (actualGridCols, actualGridRows) = BuildUtility.CalculateOptimalGrid(actualMatCount, grid);
 
-                // 최적의 그리드 배치 계산 (정사각형에 가깝게)
-                int actualGridCols = Mathf.CeilToInt(Mathf.Sqrt(actualMatCount));
-                int actualGridRows = Mathf.CeilToInt(actualMatCount / (float)actualGridCols);
-
-                // 원래 설정된 그리드 크기를 초과하지 않도록 제한
-                if (actualGridCols > grid)
-                {
-                    actualGridCols = grid;
-                    actualGridRows = Mathf.CeilToInt(actualMatCount / (float)grid);
-                }
-
-                // 동적 아틀라스 크기 계산
-                // 각 타일은 정사각형(cell x cell)이므로, 아틀라스도 정사각형 기준으로 계산
-                // 필요한 최대 차원을 기준으로 정사각형 아틀라스 생성
-                int actualAtlasSize = Mathf.Max(actualGridCols, actualGridRows) * cell;
-
-                // 최대 크기 제한 (사용자 설정 초과 방지)
-                actualAtlasSize = Mathf.Min(actualAtlasSize, atlasSize);
-
-                // 최소 크기 보장 (너무 작으면 품질 저하)
-                actualAtlasSize = Mathf.Max(actualAtlasSize, cell);
+                // Calculate atlas size using utility
+                int actualAtlasSize = BuildUtility.CalculateAtlasSize(actualGridCols, actualGridRows, cell, atlasSize);
 
                 for (int i = 0; i < pageItems.Count; i++)
                 {
@@ -573,13 +537,13 @@ namespace K13A.MaterialMerger.Editor.Services
 
                 var atlasByProp = new Dictionary<string, Texture2D>(StringComparer.Ordinal);
 
-                LoggingService?.Info($"  Creating atlas textures: {allAtlasProps.Count}", 
+                LoggingService?.Info($"  Creating atlas textures: {allAtlasProps.Count}",
                     $"Size: {actualAtlasSize}x{actualAtlasSize}, Grid: {actualGridCols}x{actualGridRows}");
-                
+
                 foreach (var prop in allAtlasProps)
                 {
-                    bool normalLike = texMeta.TryGetValue(prop, out var meta) ? meta.isNormalLike : IsNormalLikeProperty(prop);
-                    bool sRGB = texMeta.TryGetValue(prop, out meta) ? meta.isSRGB : !IsLinearProperty(prop);
+                    bool normalLike = texMeta.TryGetValue(prop, out var meta) ? meta.isNormalLike : BuildUtility.IsNormalMapProperty(prop);
+                    bool sRGB = texMeta.TryGetValue(prop, out meta) ? meta.isSRGB : !BuildUtility.IsLinearProperty(prop);
                     if (normalLike) sRGB = false;
 
                     // 정사각형 아틀라스 생성 (UV 찌그러짐 방지)
@@ -604,12 +568,12 @@ namespace K13A.MaterialMerger.Editor.Services
                         var atlas = atlasByProp[prop];
 
                         var solidColorRules = bakeRows.Where(d =>
-                            d.bakeMode == BakeMode.색상굽기_텍스처타일 &&
+                            d.bakeMode == BakeMode.BakeColorToTexture &&
                             d.type == ShaderUtil.ShaderPropertyType.Color &&
                             d.targetTexProp == prop).ToList();
 
                         var solidScalarRules = bakeRows.Where(d =>
-                            d.bakeMode == BakeMode.스칼라굽기_그레이타일 &&
+                            d.bakeMode == BakeMode.BakeScalarToGrayscale &&
                             (d.type == ShaderUtil.ShaderPropertyType.Float || d.type == ShaderUtil.ShaderPropertyType.Range) &&
                             d.targetTexProp == prop).ToList();
 
@@ -640,16 +604,16 @@ namespace K13A.MaterialMerger.Editor.Services
                         }
 
                         Texture2D src = (mat && mat.HasProperty(prop)) ? (mat.GetTexture(prop) as Texture2D) : null;
-                        Vector4 st = GetST(mat, prop);
+                        Vector4 st = BuildUtility.GetScaleTiling(mat, prop);
 
-                        bool normalLike = texMeta.TryGetValue(prop, out var meta) ? meta.isNormalLike : IsNormalLikeProperty(prop);
-                        bool sRGB = texMeta.TryGetValue(prop, out meta) ? meta.isSRGB : !IsLinearProperty(prop);
+                        bool normalLike = texMeta.TryGetValue(prop, out var meta) ? meta.isNormalLike : BuildUtility.IsNormalMapProperty(prop);
+                        bool sRGB = texMeta.TryGetValue(prop, out meta) ? meta.isSRGB : !BuildUtility.IsLinearProperty(prop);
                         if (normalLike) sRGB = false;
 
                         var pixels = TextureProcessor.SampleWithScaleTiling(src, st, content, content, sRGB, normalLike);
 
                         foreach (var mulRule in bakeRows.Where(d =>
-                                     d.bakeMode == BakeMode.색상곱_텍스처타일 &&
+                                     d.bakeMode == BakeMode.MultiplyColorWithTexture &&
                                      d.type == ShaderUtil.ShaderPropertyType.Color &&
                                      d.targetTexProp == prop))
                         {
@@ -675,8 +639,8 @@ namespace K13A.MaterialMerger.Editor.Services
                     log.createdAssetPaths.Add(p);
                     LoggingService?.Info($"    Saved: {kv.Key} → {System.IO.Path.GetFileName(p)}");
 
-                    bool normalLike = texMeta.TryGetValue(kv.Key, out var meta) ? meta.isNormalLike : IsNormalLikeProperty(kv.Key);
-                    bool sRGB = texMeta.TryGetValue(kv.Key, out meta) ? meta.isSRGB : !IsLinearProperty(kv.Key);
+                    bool normalLike = texMeta.TryGetValue(kv.Key, out var meta) ? meta.isNormalLike : BuildUtility.IsNormalMapProperty(kv.Key);
+                    bool sRGB = texMeta.TryGetValue(kv.Key, out meta) ? meta.isSRGB : !BuildUtility.IsLinearProperty(kv.Key);
                     AtlasGenerator.ConfigureImporter(p, atlasSize, sRGB, normalLike);
                 }
 
@@ -700,7 +664,7 @@ namespace K13A.MaterialMerger.Editor.Services
                     mergedMaterial = null,
                     materialPath = matPath
                 });
-                
+
                 LoggingService?.Success($"Page {page + 1}/{g.pageCount} complete");
             }
 
@@ -753,16 +717,16 @@ namespace K13A.MaterialMerger.Editor.Services
                 .Where(r =>
                     r.doAction &&
                     r.type != ShaderUtil.ShaderPropertyType.TexEnv &&
-                    (r.bakeMode == BakeMode.색상굽기_텍스처타일 ||
-                     r.bakeMode == BakeMode.스칼라굽기_그레이타일 ||
-                     r.bakeMode == BakeMode.색상곱_텍스처타일))
+                    (r.bakeMode == BakeMode.BakeColorToTexture ||
+                     r.bakeMode == BakeMode.BakeScalarToGrayscale ||
+                     r.bakeMode == BakeMode.MultiplyColorWithTexture))
                 .ToList();
 
             List<Row> resetRows = g.rows
                 .Where(r =>
                     r.doAction &&
                     r.type != ShaderUtil.ShaderPropertyType.TexEnv &&
-                    r.bakeMode == BakeMode.리셋_쉐이더기본값)
+                    r.bakeMode == BakeMode.ResetToDefault)
                 .ToList();
 
             HashSet<string> allAtlasProps = new HashSet<string>(enabledTexProps, StringComparer.Ordinal);
@@ -831,9 +795,9 @@ namespace K13A.MaterialMerger.Editor.Services
                     if (!merged || !merged.HasProperty(r.name) || !defMat) continue;
 
                     bool bakedOrMul =
-                        r.bakeMode == BakeMode.색상굽기_텍스처타일 ||
-                        r.bakeMode == BakeMode.스칼라굽기_그레이타일 ||
-                        r.bakeMode == BakeMode.색상곱_텍스처타일;
+                        r.bakeMode == BakeMode.BakeColorToTexture ||
+                        r.bakeMode == BakeMode.BakeScalarToGrayscale ||
+                        r.bakeMode == BakeMode.MultiplyColorWithTexture;
 
                     if (!bakedOrMul) continue;
 
@@ -845,7 +809,7 @@ namespace K13A.MaterialMerger.Editor.Services
                         merged.SetFloat(r.name, defMat.GetFloat(r.name));
                 }
 
-                if (diffPolicy == DiffPolicy.샘플머테리얼기준으로진행 && sampleMaterial)
+                if (diffPolicy == DiffPolicy.UseSampleMaterial && sampleMaterial)
                     ApplySampleMaterialOverrides(g, merged, sampleMaterial);
 
                 EditorUtility.SetDirty(merged);
@@ -891,9 +855,9 @@ namespace K13A.MaterialMerger.Editor.Services
         {
             var renderers = new HashSet<Renderer>();
             foreach (var mi in g.mats)
-                foreach (var u in mi.users)
-                    if (u)
-                        renderers.Add(u);
+            foreach (var u in mi.users)
+                if (u)
+                    renderers.Add(u);
 
             LoggingService?.Info($"  Renderers to process: {renderers.Count}");
 
@@ -1002,7 +966,7 @@ namespace K13A.MaterialMerger.Editor.Services
                         mergeCandidates.Add(page.mergedMaterial);
 
                 int[] submeshMergeMap = null;
-                if (TryBuildSubmeshMergeMap(beforeMesh, shared, mergeCandidates, out var mergedMaterials, out var mergeMap))
+                if (BuildUtility.TryBuildSubmeshMergeMap(beforeMesh, shared, mergeCandidates, out var mergedMaterials, out var mergeMap))
                 {
                     shared = mergedMaterials;
                     submeshMergeMap = mergeMap;
@@ -1058,94 +1022,6 @@ namespace K13A.MaterialMerger.Editor.Services
             string shaderName = g.key.shader ? g.key.shader.name : g.shaderName;
             if (!string.IsNullOrWhiteSpace(shaderName)) return shaderName;
             return "Merged";
-        }
-
-        private bool TryBuildSubmeshMergeMap(
-            Mesh mesh,
-            Material[] materials,
-            HashSet<Material> mergeCandidates,
-            out Material[] mergedMaterials,
-            out int[] submeshMergeMap)
-        {
-            mergedMaterials = null;
-            submeshMergeMap = null;
-            if (!mesh || materials == null || materials.Length == 0) return false;
-
-            int subMeshCount = mesh.subMeshCount;
-            if (subMeshCount <= 1) return false;
-
-            var effectiveMaterials = new Material[subMeshCount];
-            var fallback = materials[materials.Length - 1];
-            for (int s = 0; s < subMeshCount; s++)
-                effectiveMaterials[s] = s < materials.Length ? materials[s] : fallback;
-
-            var keyToIndex = new Dictionary<(int, MeshTopology), int>();
-            var uniqueMaterials = new List<Material>();
-            var map = new int[subMeshCount];
-
-            for (int s = 0; s < subMeshCount; s++)
-            {
-                var mat = effectiveMaterials[s];
-                var topology = mesh.GetTopology(s);
-
-                if (!mat)
-                {
-                    map[s] = uniqueMaterials.Count;
-                    uniqueMaterials.Add(mat);
-                    continue;
-                }
-
-                if (mergeCandidates != null && !mergeCandidates.Contains(mat))
-                {
-                    map[s] = uniqueMaterials.Count;
-                    uniqueMaterials.Add(mat);
-                    continue;
-                }
-
-                var key = (mat.GetInstanceID(), topology);
-                if (!keyToIndex.TryGetValue(key, out var index))
-                {
-                    index = uniqueMaterials.Count;
-                    uniqueMaterials.Add(mat);
-                    keyToIndex[key] = index;
-                }
-                map[s] = index;
-            }
-
-            if (uniqueMaterials.Count >= subMeshCount) return false;
-
-            mergedMaterials = uniqueMaterials.ToArray();
-            submeshMergeMap = map;
-            return true;
-        }
-
-        private Vector4 GetST(Material mat, string prop)
-        {
-            if (!mat) return new Vector4(1, 1, 0, 0);
-            string stName = prop + "_ST";
-            if (!mat.HasProperty(stName)) return new Vector4(1, 1, 0, 0);
-            return mat.GetVector(stName);
-        }
-
-        private bool IsNormalLikeProperty(string prop)
-        {
-            return prop.IndexOf("Bump", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                   prop.IndexOf("Normal", StringComparison.OrdinalIgnoreCase) >= 0;
-        }
-
-        private bool IsLinearProperty(string prop)
-        {
-            var lower = prop.ToLowerInvariant();
-            return lower.Contains("mask") ||
-                   lower.Contains("normal") ||
-                   lower.Contains("bump") ||
-                   lower.Contains("height") ||
-                   lower.Contains("displace") ||
-                   lower.Contains("metallic") ||
-                   lower.Contains("smoothness") ||
-                   lower.Contains("rough") ||
-                   lower.Contains("occlusion") ||
-                   lower.Contains("ao");
         }
     }
 }

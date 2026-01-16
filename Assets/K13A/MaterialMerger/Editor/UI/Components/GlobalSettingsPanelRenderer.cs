@@ -147,7 +147,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                 Localization.Get(L10nKey.UnresolvedDiffPolicyTooltip));
             state.diffPolicy = (DiffPolicy)EditorGUILayout.EnumPopup(policyContent, state.diffPolicy);
 
-            if (state.diffPolicy == DiffPolicy.샘플머테리얼기준으로진행)
+            if (state.diffPolicy == DiffPolicy.UseSampleMaterial)
             {
                 var sampleContent = new GUIContent(Localization.Get(L10nKey.SampleMaterial),
                     Localization.Get(L10nKey.SampleMaterialTooltip));
@@ -157,11 +157,11 @@ namespace K13A.MaterialMerger.Editor.UI.Components
 
             string policySummary;
             var policyType = MessageType.None;
-            if (state.diffPolicy == DiffPolicy.미해결이면중단)
+            if (state.diffPolicy == DiffPolicy.StopIfUnresolved)
             {
                 policySummary = Localization.Get(L10nKey.PolicySummaryStop);
             }
-            else if (state.diffPolicy == DiffPolicy.샘플머테리얼기준으로진행)
+            else if (state.diffPolicy == DiffPolicy.UseSampleMaterial)
             {
                 if (state.diffSampleMaterial)
                 {

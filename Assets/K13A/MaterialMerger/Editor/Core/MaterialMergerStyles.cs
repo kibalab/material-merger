@@ -30,9 +30,9 @@ namespace K13A.MaterialMerger.Editor.Core
         private Texture2D tagBg;
         private Texture2D tagWarnBg;
 
-        // 상수
+        // 상수 (Constants에서 참조하거나 여기서 정의)
         public const float TopLabelWidth = 90f;
-        public const float RowHeaderHeight = 24f;
+        public static float RowHeaderHeight => Constants.RowHeaderHeight;
 
         /// <summary>
         /// 스타일이 초기화되지 않았거나 테마가 변경되었으면 스타일을 다시 생성

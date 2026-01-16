@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
 using UnityEngine;
+using K13A.MaterialMerger.Editor.Core;
 using K13A.MaterialMerger.Editor.Models;
 using K13A.MaterialMerger.Editor.Services.Localization;
 
@@ -11,10 +12,16 @@ namespace K13A.MaterialMerger.Editor.Services
         ILocalizationService LocalizationService { get; set; }
 
         /// <summary>
-        /// 빌드 확인 창 표시
+        /// Show build confirmation window
         /// </summary>
+        /// <param name="executor">Build executor callback</param>
+        /// <param name="root">Root GameObject</param>
+        /// <param name="scans">Scanned groups</param>
+        /// <param name="diffPolicy">Difference handling policy</param>
+        /// <param name="sampleMaterial">Sample material for diff resolution</param>
+        /// <param name="outputFolder">Output folder path</param>
         void BuildAndApplyWithConfirm(
-            dynamic owner,
+            IBuildExecutor executor,
             GameObject root,
             List<GroupScan> scans,
             DiffPolicy diffPolicy,
@@ -23,24 +30,11 @@ namespace K13A.MaterialMerger.Editor.Services
         );
 
         /// <summary>
-        /// 머티리얼 빌드 및 적용
+        /// Build and apply atlas with settings object
         /// </summary>
-        void BuildAndApply(
-            GameObject root,
-            List<GroupScan> scans,
-            DiffPolicy diffPolicy,
-            Material sampleMaterial,
-            bool cloneRootOnApply,
-            bool deactivateOriginalRoot,
-            bool keepPrefabOnClone,
-            string outputFolder,
-            int atlasSize,
-            int grid,
-            int paddingPx,
-            bool groupByKeywords,
-            bool groupByRenderQueue,
-            bool splitOpaqueTransparent
-        );
+        /// <param name="settings">Build settings</param>
+        /// <param name="scans">Scanned groups</param>
+        void BuildAndApply(BuildSettings settings, List<GroupScan> scans);
 
         /// <summary>
         /// 적용을 위한 루트 복제

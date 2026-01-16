@@ -23,9 +23,9 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         /// </summary>
         public float GetRowHeight(GroupScan g, Row row)
         {
-            if (!row.expanded) return MaterialMergerStyles.RowHeaderHeight;
+            if (!row.expanded) return Core.Constants.RowHeaderHeight;
 
-            float h = MaterialMergerStyles.RowHeaderHeight;
+            float h = Core.Constants.RowHeaderHeight;
 
             if (row.type == ShaderUtil.ShaderPropertyType.TexEnv)
                 return h + 60f;
@@ -39,9 +39,9 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                 h += 20f;
 
             bool needsTarget =
-                row.bakeMode == BakeMode.색상굽기_텍스처타일 ||
-                row.bakeMode == BakeMode.스칼라굽기_그레이타일 ||
-                row.bakeMode == BakeMode.색상곱_텍스처타일;
+                row.bakeMode == BakeMode.BakeColorToTexture ||
+                row.bakeMode == BakeMode.BakeScalarToGrayscale ||
+                row.bakeMode == BakeMode.MultiplyColorWithTexture;
 
             if (needsTarget)
                 h += 60f;
@@ -81,7 +81,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                 EditorGUI.DrawRect(rect, hover);
             }
 
-            var top = new Rect(rect.x, rect.y, rect.width, MaterialMergerStyles.RowHeaderHeight);
+            var top = new Rect(rect.x, rect.y, rect.width, Core.Constants.RowHeaderHeight);
             var cols = Utilities.GUIUtility.CalcColumnLayout(top);
             float lineHeight = EditorGUIUtility.singleLineHeight;
 
@@ -139,7 +139,7 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                 }
                 else
                 {
-                    if (!allowed.Contains(row.bakeMode) || row.bakeMode == BakeMode.유지)
+                    if (!allowed.Contains(row.bakeMode) || row.bakeMode == BakeMode.Keep)
                         row.bakeMode = allowed[0];
 
                     int idx = Array.IndexOf(allowed, row.bakeMode);
@@ -149,9 +149,9 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                     row.bakeMode = allowed[Mathf.Clamp(idx, 0, allowed.Length - 1)];
 
                     bool needsTarget =
-                        row.bakeMode == BakeMode.색상굽기_텍스처타일 ||
-                        row.bakeMode == BakeMode.스칼라굽기_그레이타일 ||
-                        row.bakeMode == BakeMode.색상곱_텍스처타일;
+                row.bakeMode == BakeMode.BakeColorToTexture ||
+                row.bakeMode == BakeMode.BakeScalarToGrayscale ||
+                row.bakeMode == BakeMode.MultiplyColorWithTexture;
 
                     if (needsTarget)
                     {
@@ -252,9 +252,9 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             }
 
             bool needsTarget =
-                row.bakeMode == BakeMode.색상굽기_텍스처타일 ||
-                row.bakeMode == BakeMode.스칼라굽기_그레이타일 ||
-                row.bakeMode == BakeMode.색상곱_텍스처타일;
+                row.bakeMode == BakeMode.BakeColorToTexture ||
+                row.bakeMode == BakeMode.BakeScalarToGrayscale ||
+                row.bakeMode == BakeMode.MultiplyColorWithTexture;
 
             if (needsTarget)
             {
@@ -303,24 +303,24 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         private BakeMode[] AllowedModesUI(ShaderUtil.ShaderPropertyType t)
         {
             if (t == ShaderUtil.ShaderPropertyType.Color)
-                return new[] { BakeMode.리셋_쉐이더기본값, BakeMode.색상굽기_텍스처타일, BakeMode.색상곱_텍스처타일 };
+                return new[] { BakeMode.ResetToDefault, BakeMode.BakeColorToTexture, BakeMode.MultiplyColorWithTexture };
 
             if (t == ShaderUtil.ShaderPropertyType.Float || t == ShaderUtil.ShaderPropertyType.Range)
-                return new[] { BakeMode.리셋_쉐이더기본값, BakeMode.스칼라굽기_그레이타일 };
+                return new[] { BakeMode.ResetToDefault, BakeMode.BakeScalarToGrayscale };
 
             if (t == ShaderUtil.ShaderPropertyType.Vector)
-                return new[] { BakeMode.리셋_쉐이더기본값 };
+                return new[] { BakeMode.ResetToDefault };
 
             return Array.Empty<BakeMode>();
         }
 
         private string ModeLabel(BakeMode m)
         {
-            if (m == BakeMode.리셋_쉐이더기본값) return Localization.Get(L10nKey.BakeModeReset);
-            if (m == BakeMode.색상굽기_텍스처타일) return Localization.Get(L10nKey.BakeModeColorBake);
-            if (m == BakeMode.스칼라굽기_그레이타일) return Localization.Get(L10nKey.BakeModeScalarBake);
-            if (m == BakeMode.색상곱_텍스처타일) return Localization.Get(L10nKey.BakeModeColorMultiply);
-            if (m == BakeMode.유지) return Localization.Get(L10nKey.BakeModeKeep);
+            if (m == BakeMode.ResetToDefault) return Localization.Get(L10nKey.BakeModeReset);
+            if (m == BakeMode.BakeColorToTexture) return Localization.Get(L10nKey.BakeModeColorBake);
+            if (m == BakeMode.BakeScalarToGrayscale) return Localization.Get(L10nKey.BakeModeScalarBake);
+            if (m == BakeMode.MultiplyColorWithTexture) return Localization.Get(L10nKey.BakeModeColorMultiply);
+            if (m == BakeMode.Keep) return Localization.Get(L10nKey.BakeModeKeep);
             return m.ToString();
         }
     }

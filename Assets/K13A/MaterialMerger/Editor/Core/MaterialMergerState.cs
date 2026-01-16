@@ -32,7 +32,7 @@ namespace K13A.MaterialMerger.Editor.Core
         public int paddingPx = 16;
 
         // 머지 정책
-        public DiffPolicy diffPolicy = DiffPolicy.미해결이면중단;
+        public DiffPolicy diffPolicy = DiffPolicy.StopIfUnresolved;
         public Material diffSampleMaterial;
         public string outputFolder = "Assets/_Generated/MultiAtlas";
 

@@ -14,7 +14,7 @@ namespace K13A.MaterialMerger.Editor.Core
     /// <summary>
     /// Material Merger EditorWindow - SOLID 원칙을 준수하는 오케스트레이터
     /// </summary>
-    public class MaterialMergerWindow : EditorWindow
+    public class MaterialMergerWindow : EditorWindow, IBuildExecutor
     {
         // State 및 Styles
         private MaterialMergerState state;
@@ -229,22 +229,8 @@ namespace K13A.MaterialMerger.Editor.Core
 
         public void BuildAndApply()
         {
-            buildService.BuildAndApply(
-                state.root,
-                state.scans,
-                state.diffPolicy,
-                state.diffSampleMaterial,
-                state.cloneRootOnApply,
-                state.deactivateOriginalRoot,
-                state.keepPrefabOnClone,
-                state.outputFolder,
-                state.atlasSize,
-                state.grid,
-                state.paddingPx,
-                state.groupByKeywords,
-                state.groupByRenderQueue,
-                state.splitOpaqueTransparent
-            );
+            var settings = Models.BuildSettings.FromState(state);
+            buildService.BuildAndApply(settings, state.scans);
         }
 
         private void OnRootChanged(GameObject newRoot)
