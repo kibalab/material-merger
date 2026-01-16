@@ -82,15 +82,15 @@ namespace K13A.MaterialMerger.Editor.Models
             switch (level)
             {
                 case Level.Info:
-                    return "[정보]";
+                    return "[INFO]";
                 case Level.Warning:
-                    return "[경고]";
+                    return "[WARN]";
                 case Level.Error:
-                    return "[오류]";
+                    return "[ERRO]";
                 case Level.Success:
-                    return "[성공]";
+                    return "[SUCC]";
                 default:
-                    return "[로그]";
+                    return "[LOGS]";
             }
         }
     }
