@@ -117,6 +117,8 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
         public const string MergeSelectTooltip = "group.merge_select_tooltip";
         public const string MergedTag = "group.merged_tag";
         public const string MergedTagTooltip = "group.merged_tag_tooltip";
+        public const string TagOpaque = "group.tag_opaque";
+        public const string TagTransparent = "group.tag_transparent";
 
         // Property Table
         public const string Property = "table.property";

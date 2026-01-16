@@ -95,8 +95,9 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                         GUI.Label(fieldRect, new GUIContent("", Localization.Get(L10nKey.OutputMaterialNameTooltip)));
                 }
 
-                if (!string.IsNullOrEmpty(g.tag))
-                    GUILayout.Label($"[{g.tag}]", Styles.stMiniDim, GUILayout.Width(50));
+                var tagLabel = GetLocalizedTag(g);
+                if (!string.IsNullOrEmpty(tagLabel))
+                    GUILayout.Label($"[{tagLabel}]", Styles.stMiniDim);
 
                 GUILayout.FlexibleSpace();
 
@@ -150,6 +151,17 @@ namespace K13A.MaterialMerger.Editor.UI.Components
                 headerRect = new Rect(0f, headerRect.y, EditorGUIUtility.currentViewWidth, headerRect.height);
                 registerHeaderRect?.Invoke(g, headerRect);
             }
+        }
+
+        private string GetLocalizedTag(GroupScan g)
+        {
+            if (g == null) return "";
+            if (Localization == null) return g.tag ?? "";
+            if (g.key.transparencyKey == 1)
+                return Localization.Get(L10nKey.TagTransparent);
+            if (g.key.transparencyKey == 0)
+                return Localization.Get(L10nKey.TagOpaque);
+            return g.tag ?? "";
         }
 
         /// <summary>
