@@ -140,9 +140,29 @@ namespace K13A.MaterialMerger.Editor.Core
             scanService = new MaterialScanService { LoggingService = loggingService };
             profileService = new ProfileService();
 
+            // 빌드 단계 서비스 생성
+            var assetBuilder = new AtlasAssetBuilder
+            {
+                AtlasGenerator = atlasGenerator,
+                TextureProcessor = textureProcessor,
+                ScanService = scanService,
+                LoggingService = loggingService
+            };
+
+            var sceneApplier = new SceneApplier
+            {
+                AtlasGenerator = atlasGenerator,
+                TextureProcessor = textureProcessor,
+                MeshRemapper = meshRemapper,
+                ScanService = scanService,
+                LoggingService = loggingService
+            };
+
             // BuildService에 의존성 주입
             buildService = new MaterialBuildService
             {
+                AssetBuilder = assetBuilder,
+                SceneApplier = sceneApplier,
                 AtlasGenerator = atlasGenerator,
                 TextureProcessor = textureProcessor,
                 MeshRemapper = meshRemapper,
