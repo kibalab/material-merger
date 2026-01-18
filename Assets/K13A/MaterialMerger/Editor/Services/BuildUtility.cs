@@ -272,18 +272,30 @@ namespace K13A.MaterialMerger.Editor.Services
             if (settings.CloneRootOnApply && !settings.Root)
                 return (false, "Root is required when clone is enabled");
             
+            if (settings.DiffPolicy == DiffPolicy.UseSampleMaterial && !settings.SampleMaterial)
+                return (false, "Sample material is required for the selected diff policy");
+
             if (settings.AtlasSize < 64)
                 return (false, "Atlas size too small");
-            
+
             if (settings.Grid < 1)
                 return (false, "Grid must be at least 1");
-            
+
+            if (!Constants.SupportedAtlasSizes.Contains(settings.AtlasSize))
+                return (false, $"Unsupported atlas size ({settings.AtlasSize})");
+
+            if (!Constants.SupportedGridSizes.Contains(settings.Grid))
+                return (false, $"Unsupported grid size ({settings.Grid})");
+
             if (settings.ContentSize <= 0)
                 return (false, "Padding too large for cell size");
-            
+
             if (string.IsNullOrEmpty(settings.OutputFolder))
                 return (false, "Output folder not specified");
-            
+
+            if (!settings.OutputFolder.StartsWith("Assets/", StringComparison.Ordinal))
+                return (false, "Output folder must be under Assets");
+
             return (true, null);
         }
 

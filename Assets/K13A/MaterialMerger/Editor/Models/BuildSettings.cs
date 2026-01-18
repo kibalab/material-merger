@@ -33,9 +33,10 @@ namespace K13A.MaterialMerger.Editor.Models
         public Material SampleMaterial { get; }
 
         // 계산된 값
-        public int CellSize => AtlasSize / Grid;
+        private int SafeGrid => Mathf.Max(1, Grid);
+        public int CellSize => AtlasSize / SafeGrid;
         public int ContentSize => Mathf.Max(1, CellSize - PaddingPx * 2);
-        public int TilesPerPage => Grid * Grid;
+        public int TilesPerPage => SafeGrid * SafeGrid;
 
         public BuildSettings(
             GameObject root,

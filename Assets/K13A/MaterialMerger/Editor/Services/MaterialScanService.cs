@@ -89,7 +89,8 @@ namespace K13A.MaterialMerger.Editor.Services
 
             LoggingService?.Info($"Material analysis complete", $"Total slots: {totalMaterialSlots}, Groups: {groups.Count}");
 
-            int tilesPerPage = grid * grid;
+            int safeGrid = Mathf.Max(1, grid);
+            int tilesPerPage = safeGrid * safeGrid;
 
             foreach (var kv in groups)
             {

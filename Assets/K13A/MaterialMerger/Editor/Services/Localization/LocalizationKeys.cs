@@ -197,6 +197,8 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
         public const string DialogOutputFolderError = "dialog.output_folder_error";
         public const string DialogServiceNotInitialized = "dialog.service_not_initialized";
 
+
+
         // Rollback
         public const string RollbackMenuItem = "rollback.menu_item";
         public const string RollbackTitle = "rollback.title";
