@@ -115,7 +115,12 @@ namespace K13A.MaterialMerger.Editor.Services
             BuildSettings settings,
             string outputFolder)
         {
-            LoggingService?.Info($"Preparing group build: {g.shaderName}", $"Materials: {g.mats.Count}, Pages: {g.pageCount}");
+            var mats = g.mats.ToList();
+            int tilesPerPage = settings.TilesPerPage;
+            int pageCount = Mathf.CeilToInt(mats.Count / (float)tilesPerPage);
+            pageCount = Mathf.Max(0, pageCount);
+
+            LoggingService?.Info($"Preparing group build: {g.shaderName}", $"Materials: {mats.Count}, Pages: {pageCount}");
 
             if (!TextureProcessor.BlitMaterial)
             {
@@ -135,8 +140,8 @@ namespace K13A.MaterialMerger.Editor.Services
             LoggingService?.Info($"Created output folder: {planFolder}");
 
             var result = new GroupBuildData { groupKey = g.key };
-            var mats = g.mats.ToList();
-            int tilesPerPage = g.tilesPerPage;
+            if (mats.Count == 0 || tilesPerPage <= 0 || pageCount == 0)
+                return null;
 
             // Get texture metadata for color space detection
             var texMeta = g.rows
@@ -150,15 +155,15 @@ namespace K13A.MaterialMerger.Editor.Services
             LoggingService?.Info($"Properties: {enabledTexProps.Count} textures, {bakeRows.Count} bake, {allAtlasProps.Count} total");
 
             // Build each page
-            for (int page = 0; page < g.pageCount; page++)
+            for (int page = 0; page < pageCount; page++)
             {
-                LoggingService?.Info($"Processing page {page + 1}/{g.pageCount}");
+                LoggingService?.Info($"Processing page {page + 1}/{pageCount}");
 
                 int start = page * tilesPerPage;
                 int end = Mathf.Min(mats.Count, start + tilesPerPage);
                 var pageItems = mats.GetRange(start, end - start);
 
-                string pageFolder = g.pageCount > 1
+                string pageFolder = pageCount > 1
                     ? Path.Combine(groupFolder, $"Page_{page:00}").Replace("\\", "/")
                     : groupFolder;
                 Directory.CreateDirectory(pageFolder);
@@ -186,7 +191,7 @@ namespace K13A.MaterialMerger.Editor.Services
                 SaveAtlasTextures(atlasByProp, texMeta, pageFolder, atlasSize, log);
 
                 // Create merged material
-                string matPath = CreateMergedMaterial(g, pageItems[0].mat, page, pageFolder, log);
+                string matPath = CreateMergedMaterial(g, pageItems[0].mat, page, pageFolder, log, pageCount > 1);
 
                 result.pageInfos.Add(new PageBuildInfo
                 {
@@ -196,7 +201,7 @@ namespace K13A.MaterialMerger.Editor.Services
                     materialPath = matPath
                 });
 
-                LoggingService?.Success($"Page {page + 1}/{g.pageCount} complete");
+                LoggingService?.Success($"Page {page + 1}/{pageCount} complete");
             }
 
             if (!result.IsValid)
@@ -364,14 +369,15 @@ namespace K13A.MaterialMerger.Editor.Services
             Material template, 
             int page, 
             string pageFolder,
-            KibaMultiAtlasMergerLog log)
+            KibaMultiAtlasMergerLog log,
+            bool usePageSuffix)
         {
             var merged = new Material(template);
             string baseName = BuildUtility.GetOutputMaterialName(g);
             baseName = AtlasGenerator.SanitizeFileName(baseName);
             if (string.IsNullOrEmpty(baseName)) baseName = "Merged";
 
-            string matFile = g.pageCount > 1 ? $"{baseName}_P{page:00}.mat" : $"{baseName}.mat";
+            string matFile = usePageSuffix ? $"{baseName}_P{page:00}.mat" : $"{baseName}.mat";
             string matPath = AssetDatabase.GenerateUniqueAssetPath(
                 Path.Combine(pageFolder, matFile).Replace("\\", "/"));
 

@@ -358,7 +358,8 @@ namespace K13A.MaterialMerger.Editor.Services
                     continue;
                 }
 
-                string pageFolder = g.pageCount > 1
+                int pageCount = buildData.pageInfos.Count;
+                string pageFolder = pageCount > 1
                     ? Path.Combine(groupFolder, $"Page_{page:00}").Replace("\\", "/")
                     : groupFolder;
 

@@ -36,6 +36,9 @@ namespace K13A.MaterialMerger.Editor.Core
         public Material diffSampleMaterial;
         public string outputFolder = "Assets/_Generated/MultiAtlas";
 
+        public bool ndmfEnabled = false;
+        public bool ndmfUseTemporaryOutputFolder = true;
+
         // UI 상태
         public bool globalFoldout = true;
         public Vector2 scroll;

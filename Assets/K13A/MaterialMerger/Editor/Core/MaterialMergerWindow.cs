@@ -247,6 +247,24 @@ namespace K13A.MaterialMerger.Editor.Core
             );
         }
 
+        public void SetRootFromInspector(GameObject newRoot)
+        {
+            if (!newRoot) return;
+
+            if (state == null)
+            {
+                EditorApplication.delayCall += () =>
+                {
+                    if (this == null) return;
+                    SetRootFromInspector(newRoot);
+                };
+                return;
+            }
+
+            if (state.root == newRoot) return;
+            OnRootChanged(newRoot);
+        }
+
         public void BuildAndApply()
         {
             var settings = Models.BuildSettings.FromState(state);
@@ -309,6 +327,9 @@ namespace K13A.MaterialMerger.Editor.Core
             if (!string.IsNullOrEmpty(state.profile.outputFolder))
                 state.outputFolder = state.profile.outputFolder;
 
+            state.ndmfEnabled = state.profile.ndmfEnabled;
+            state.ndmfUseTemporaryOutputFolder = state.profile.ndmfUseTemporaryOutputFolder;
+
             state.globalFoldout = state.profile.globalFoldout;
         }
 
@@ -358,6 +379,9 @@ namespace K13A.MaterialMerger.Editor.Core
             state.profile.diffPolicy = (int)state.diffPolicy;
             state.profile.diffSampleMaterial = state.diffSampleMaterial;
             state.profile.outputFolder = state.outputFolder;
+
+            state.profile.ndmfEnabled = state.ndmfEnabled;
+            state.profile.ndmfUseTemporaryOutputFolder = state.ndmfUseTemporaryOutputFolder;
 
             state.profile.globalFoldout = state.globalFoldout;
 

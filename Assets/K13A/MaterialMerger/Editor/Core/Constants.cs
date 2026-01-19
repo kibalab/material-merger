@@ -19,7 +19,7 @@ namespace K13A.MaterialMerger.Editor.Core
         public const int DefaultPaddingPx = 16;
 
         /// <summary>지원되는 아틀라스 크기 목록</summary>
-        public static readonly int[] SupportedAtlasSizes = { 256, 512, 1024, 2048, 4096, 8192 };
+        public static readonly int[] SupportedAtlasSizes = { 128, 256, 512, 1024, 2048, 4096, 8192 };
 
         /// <summary>지원되는 그리드 크기 목록</summary>
         public static readonly int[] SupportedGridSizes = { 2, 3, 4, 5, 6, 8 };

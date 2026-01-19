@@ -25,6 +25,9 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 // Window
                 [L10nKey.WindowTitle] = "멀티 아틀라스 머저",
 
+                [L10nKey.OpenWindow] = "창 열기",
+                [L10nKey.OpenWindowTooltip] = "머티리얼 머저 창을 엽니다.",
+
                 // Top Panel
                 [L10nKey.Scan] = "스캔",
                 [L10nKey.BuildAndApply] = "빌드 & 적용",
@@ -79,6 +82,17 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 [L10nKey.PolicySummaryProceed] = "해결되지 않은 차이는 첫 번째 머티리얼 값을 사용합니다.",
                 [L10nKey.PolicySummarySample] = "미해결 차이는 샘플 머티리얼 값을 사용합니다.",
                 [L10nKey.PolicySummarySampleMissing] = "샘플 머티리얼이 없어 첫 번째 머티리얼 값을 사용합니다.",
+                [L10nKey.NdmfSettings] = "NDMF 설정",
+                [L10nKey.NdmfEnabled] = "NDMF 빌드에서 자동 병합",
+                [L10nKey.NdmfEnabledTooltip] = "NDMF 빌드 단계에서 머티리얼 머지를 자동으로 수행합니다.",
+                [L10nKey.NdmfUseTempOutput] = "임시 출력 폴더 사용",
+                [L10nKey.NdmfUseTempOutputTooltip] = "NDMF 생성 폴더에 결과를 저장합니다.",
+                [L10nKey.NdmfSummaryEnabled] = "NDMF 빌드 시 이 프로필이 적용됩니다.",
+                [L10nKey.NdmfSummaryDisabled] = "NDMF 빌드에서는 이 프로필이 적용되지 않습니다.",
+
+
+
+
 
                 // Statistics
                 [L10nKey.Statistics] = "통계",
@@ -240,6 +254,9 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 // Window
                 [L10nKey.WindowTitle] = "Multi Atlas Merger",
 
+                [L10nKey.OpenWindow] = "Open Window",
+                [L10nKey.OpenWindowTooltip] = "Open the Material Merger window.",
+
                 // Top Panel
                 [L10nKey.Scan] = "Scan",
                 [L10nKey.BuildAndApply] = "Build & Apply",
@@ -294,6 +311,14 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 [L10nKey.PolicySummaryProceed] = "Use first material values for unresolved differences.",
                 [L10nKey.PolicySummarySample] = "Unresolved differences use sample material values.",
                 [L10nKey.PolicySummarySampleMissing] = "No sample material set; using first material values.",
+                [L10nKey.NdmfSettings] = "NDMF Settings",
+                [L10nKey.NdmfEnabled] = "Enable merge in NDMF build",
+                [L10nKey.NdmfEnabledTooltip] = "Run material merge automatically during NDMF build.",
+                [L10nKey.NdmfUseTempOutput] = "Use temporary output folder",
+                [L10nKey.NdmfUseTempOutputTooltip] = "Save results under NDMF generated assets.",
+                [L10nKey.NdmfSummaryEnabled] = "This profile runs during NDMF builds.",
+                [L10nKey.NdmfSummaryDisabled] = "This profile does not run during NDMF builds.",
+
 
                 // Statistics
                 [L10nKey.Statistics] = "Statistics",
@@ -455,6 +480,9 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 // Window
                 [L10nKey.WindowTitle] = "マルチアトラスマージャー",
 
+                [L10nKey.OpenWindow] = "ウィンドウを開く",
+                [L10nKey.OpenWindowTooltip] = "マテリアルマージャーのウィンドウを開きます。",
+
                 // Top Panel
                 [L10nKey.Scan] = "スキャン",
                 [L10nKey.BuildAndApply] = "ビルド＆適用",
@@ -509,6 +537,14 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
                 [L10nKey.PolicySummaryProceed] = "未解決の差分は最初のマテリアル値を使用します。",
                 [L10nKey.PolicySummarySample] = "未解決の差分はサンプルマテリアルの値を使用します。",
                 [L10nKey.PolicySummarySampleMissing] = "サンプルマテリアルがないため最初のマテリアル値を使用します。",
+                [L10nKey.NdmfSettings] = "NDMF設定",
+                [L10nKey.NdmfEnabled] = "NDMFビルドで自動マージ",
+                [L10nKey.NdmfEnabledTooltip] = "NDMFビルド工程でマテリアルマージを自動実行します。",
+                [L10nKey.NdmfUseTempOutput] = "一時出力フォルダを使用",
+                [L10nKey.NdmfUseTempOutputTooltip] = "NDMF生成フォルダに結果を保存します。",
+                [L10nKey.NdmfSummaryEnabled] = "NDMFビルド時にこのプロファイルが適用されます。",
+                [L10nKey.NdmfSummaryDisabled] = "NDMFビルドではこのプロファイルは適用されません。",
+
 
                 // Statistics
                 [L10nKey.Statistics] = "統計",

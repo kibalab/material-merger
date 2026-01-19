@@ -34,11 +34,11 @@ namespace K13A.MaterialMerger.Editor.Tests
         }
 
         [Test]
-        public void ValidateBuildSettings_RequiresAssetsOutputFolder()
+        public void ValidateBuildSettings_RequiresAssetsOrPackagesOutputFolder()
         {
             var settings = new BuildSettings(
                 null,
-                "C:/Temp",
+                "Temp/Output",
                 false,
                 false,
                 false,
@@ -54,7 +54,31 @@ namespace K13A.MaterialMerger.Editor.Tests
             var (isValid, errorMessage) = BuildUtility.ValidateBuildSettings(settings);
 
             Assert.IsFalse(isValid);
-            Assert.IsTrue(errorMessage.Contains("Assets"));
+            Assert.IsTrue(errorMessage.Contains("Assets or Packages"));
+        }
+
+        [Test]
+        public void ValidateBuildSettings_AllowsPackagesOutputFolder()
+        {
+            var settings = new BuildSettings(
+                null,
+                "Packages/nadena.dev.ndmf/__Generated/Test",
+                false,
+                false,
+                false,
+                Constants.DefaultAtlasSize,
+                Constants.DefaultGrid,
+                Constants.DefaultPaddingPx,
+                true,
+                true,
+                true,
+                DiffPolicy.StopIfUnresolved,
+                null);
+
+            var (isValid, errorMessage) = BuildUtility.ValidateBuildSettings(settings);
+
+            Assert.IsTrue(isValid);
+            Assert.IsNull(errorMessage);
         }
 
         [Test]

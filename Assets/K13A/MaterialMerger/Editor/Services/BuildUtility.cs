@@ -293,8 +293,10 @@ namespace K13A.MaterialMerger.Editor.Services
             if (string.IsNullOrEmpty(settings.OutputFolder))
                 return (false, "Output folder not specified");
 
-            if (!settings.OutputFolder.StartsWith("Assets/", StringComparison.Ordinal))
-                return (false, "Output folder must be under Assets");
+            var outputFolder = settings.OutputFolder.Replace("\\", "/");
+            if (!outputFolder.StartsWith("Assets/", StringComparison.Ordinal) &&
+                !outputFolder.StartsWith("Packages/", StringComparison.Ordinal))
+                return (false, "Output folder must be under Assets or Packages");
 
             return (true, null);
         }

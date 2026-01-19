@@ -8,6 +8,8 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
     {
         // Window Title
         public const string WindowTitle = "window.title";
+        public const string OpenWindow = "window.open";
+        public const string OpenWindowTooltip = "window.open_tooltip";
 
         // Top Panel
         public const string Scan = "top.scan";
@@ -63,6 +65,15 @@ namespace K13A.MaterialMerger.Editor.Services.Localization
         public const string PolicySummaryProceed = "global.policy_summary_proceed";
         public const string PolicySummarySample = "global.policy_summary_sample";
         public const string PolicySummarySampleMissing = "global.policy_summary_sample_missing";
+
+        // NDMF
+        public const string NdmfSettings = "ndmf.settings";
+        public const string NdmfEnabled = "ndmf.enabled";
+        public const string NdmfEnabledTooltip = "ndmf.enabled_tooltip";
+        public const string NdmfUseTempOutput = "ndmf.use_temp_output";
+        public const string NdmfUseTempOutputTooltip = "ndmf.use_temp_output_tooltip";
+        public const string NdmfSummaryEnabled = "ndmf.summary_enabled";
+        public const string NdmfSummaryDisabled = "ndmf.summary_disabled";
 
         // Statistics
         public const string Statistics = "stats.statistics";

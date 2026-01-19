@@ -112,18 +112,32 @@ namespace K13A.MaterialMerger.Editor.UI.Components
         private void DrawAtlasSettings(MaterialMergerState state)
         {
             Utilities.GUIUtility.DrawSection(Localization.Get(L10nKey.Atlas), Styles.stSection);
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                var atlasContent = new GUIContent(Localization.Get(L10nKey.AtlasSize),
-                    Localization.Get(L10nKey.AtlasSizeTooltip));
-                state.atlasSize = EditorGUILayout.IntPopup(atlasContent, state.atlasSize,
-                    new[] { new GUIContent("4096"), new GUIContent("8192") }, new[] { 4096, 8192 }, GUILayout.Width(220));
-                var gridContent = new GUIContent(Localization.Get(L10nKey.Grid),
-                    Localization.Get(L10nKey.GridTooltip));
-                state.grid = EditorGUILayout.IntPopup(gridContent, state.grid,
-                    new[] { new GUIContent("2"), new GUIContent("4") }, new[] { 2, 4 }, GUILayout.Width(200));
-                GUILayout.FlexibleSpace();
-            }
+            float lineHeight = EditorGUIUtility.singleLineHeight;
+            var rowRect = EditorGUILayout.GetControlRect(false, lineHeight);
+            float gap = 8f;
+            float halfWidth = (rowRect.width - gap) * 0.5f;
+            var atlasRect = new Rect(rowRect.x, rowRect.y, halfWidth, lineHeight);
+            var gridRect = new Rect(rowRect.x + halfWidth + gap, rowRect.y, halfWidth, lineHeight);
+
+            var atlasContent = new GUIContent(Localization.Get(L10nKey.AtlasSize),
+                Localization.Get(L10nKey.AtlasSizeTooltip));
+            state.atlasSize = DrawLabeledIntPopup(atlasRect, atlasContent, state.atlasSize,
+                new[]
+                {
+                    new GUIContent("128"),
+                    new GUIContent("256"),
+                    new GUIContent("512"),
+                    new GUIContent("1024"),
+                    new GUIContent("2048"),
+                    new GUIContent("4096"),
+                    new GUIContent("8192")
+                },
+                new[] { 128, 256, 512, 1024, 2048, 4096, 8192 });
+
+            var gridContent = new GUIContent(Localization.Get(L10nKey.Grid),
+                Localization.Get(L10nKey.GridTooltip));
+            state.grid = DrawLabeledIntPopup(gridRect, gridContent, state.grid,
+                new[] { new GUIContent("2"), new GUIContent("4") }, new[] { 2, 4 });
 
             var paddingContent = new GUIContent(Localization.Get(L10nKey.Padding),
                 Localization.Get(L10nKey.PaddingTooltip));
@@ -135,6 +149,27 @@ namespace K13A.MaterialMerger.Editor.UI.Components
             if (content <= 0) content = cell;
             var atlasSummary = Localization.Get(L10nKey.AtlasSummary, tilesPerPage, cell, content);
             EditorGUILayout.HelpBox(atlasSummary, MessageType.None);
+        }
+
+        private int DrawLabeledIntPopup(
+            Rect rect,
+            GUIContent label,
+            int value,
+            GUIContent[] displayed,
+            int[] values)
+        {
+            const float spacing = 6f;
+            const float minFieldWidth = 70f;
+            float labelWidth = Mathf.Min(70f, rect.width - minFieldWidth - spacing);
+            if (labelWidth < 40f)
+                labelWidth = Mathf.Max(0f, rect.width - minFieldWidth - spacing);
+
+            var labelRect = new Rect(rect.x, rect.y, labelWidth, rect.height);
+            var fieldRect = new Rect(labelRect.xMax + spacing, rect.y,
+                rect.width - labelWidth - spacing, rect.height);
+
+            EditorGUI.LabelField(labelRect, label);
+            return EditorGUI.IntPopup(fieldRect, value, displayed, values);
         }
 
         /// <summary>

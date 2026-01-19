@@ -85,6 +85,9 @@ namespace K13A.MaterialMerger
         public Material diffSampleMaterial;
         public string outputFolder = "Assets/_Generated/MultiAtlas";
 
+        public bool ndmfEnabled = false;
+        public bool ndmfUseTemporaryOutputFolder = true;
+
         public bool globalFoldout = true;
 
         public long lastScanTicksUtc;
