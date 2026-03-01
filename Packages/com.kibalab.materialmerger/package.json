@@ -1,7 +1,7 @@
 {
   "name": "com.kibalab.materialmerger",
   "displayName": "Material Merger",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "unity": "2022.3",
   "description": "A tool to merge materials in Unity, specifically designed for VRChat avatar optimization.",
   "vrchatVersion": "2022.1.1",
