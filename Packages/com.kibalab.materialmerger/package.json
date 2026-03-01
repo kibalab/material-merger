@@ -1,6 +1,6 @@
 {
   "name": "com.kibalab.materialmerger",
-  "displayName": "K13A - Material Merger",
+  "displayName": "Material Merger",
   "version": "0.1.0",
   "unity": "2022.3",
   "description": "A tool to merge materials in Unity, specifically designed for VRChat avatar optimization.",
