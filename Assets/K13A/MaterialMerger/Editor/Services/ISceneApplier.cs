@@ -24,6 +24,32 @@ namespace K13A.MaterialMerger.Editor.Services
             AssetBuildResult buildResult);
 
         /// <summary>
+        /// Begin async scene apply
+        /// </summary>
+        /// <param name="settings">Build settings</param>
+        /// <param name="scans">Original scans with settings</param>
+        /// <param name="buildResult">Result from asset building phase</param>
+        /// <returns>Async apply context</returns>
+        SceneApplyContext BeginApplyAsync(
+            BuildSettings settings,
+            List<GroupScan> scans,
+            AssetBuildResult buildResult);
+
+        /// <summary>
+        /// Step async scene apply (time-sliced)
+        /// </summary>
+        /// <param name="context">Async apply context</param>
+        /// <param name="timeBudgetSeconds">Time budget for this step</param>
+        /// <returns>True if still running</returns>
+        bool StepApplyAsync(SceneApplyContext context, double timeBudgetSeconds);
+
+        /// <summary>
+        /// Cancel async scene apply
+        /// </summary>
+        /// <param name="context">Async apply context</param>
+        void CancelApplyAsync(SceneApplyContext context);
+
+        /// <summary>
         /// Clone the root GameObject for applying materials
         /// </summary>
         /// <param name="src">Source root object</param>

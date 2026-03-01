@@ -125,6 +125,9 @@ namespace K13A.MaterialMerger.Editor.Integrations
                     return;
                 }
 
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                TextureImportUtility.ApplySettings(buildResult.textureImports);
+
                 var applyResult = sceneApplier.ApplyToScene(settings, scans, buildResult);
                 if (!applyResult.success)
                 {

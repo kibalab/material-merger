@@ -37,7 +37,7 @@ namespace K13A.MaterialMerger.Editor.Core
         private LogConsoleRenderer logConsole;
         private LogFooterRenderer logFooter;
 
-        [MenuItem("Kiba/렌더링/멀티 아틀라스 머저")]
+        [MenuItem("K13A/Material Merger")]
         static void Open()
         {
             GetWindow<MaterialMergerWindow>();

@@ -98,7 +98,6 @@ namespace K13A.MaterialMerger.Editor.Services
         {
             string path = Path.Combine(folder, fileName).Replace("\\", "/");
             File.WriteAllBytes(path, atlas.EncodeToPNG());
-            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
             return path;
         }
 
