@@ -40,6 +40,7 @@ namespace K13A.MaterialMerger.Editor.Inspectors
 
         private Texture2D logoTexture;
         private bool logoSearched;
+        private static bool? ndmfAvailable;
 
         private void OnEnable()
         {
@@ -400,28 +401,48 @@ namespace K13A.MaterialMerger.Editor.Inspectors
 
         private void DrawNdmfSettings()
         {
+            bool hasNdmf = HasNdmfPackage();
+            if (!hasNdmf)
+            {
+                state.ndmfEnabled = false;
+            }
+
             using (new EditorGUILayout.VerticalScope(styles.stBox))
             {
                 GuiUtil.DrawSection(localizationService.Get(L10nKey.NdmfSettings), styles.stSection);
 
-                using (new EditorGUILayout.HorizontalScope())
+                using (new EditorGUI.DisabledScope(!hasNdmf))
                 {
-                    var enabledContent = new GUIContent(localizationService.Get(L10nKey.NdmfEnabled),
-                        localizationService.Get(L10nKey.NdmfEnabledTooltip));
-                    state.ndmfEnabled = EditorGUILayout.ToggleLeft(enabledContent, state.ndmfEnabled, GUILayout.Width(200));
-
-                    using (new EditorGUI.DisabledScope(!state.ndmfEnabled))
+                    using (new EditorGUILayout.HorizontalScope())
                     {
-                        var tempContent = new GUIContent(localizationService.Get(L10nKey.NdmfUseTempOutput),
-                            localizationService.Get(L10nKey.NdmfUseTempOutputTooltip));
-                        state.ndmfUseTemporaryOutputFolder = EditorGUILayout.ToggleLeft(tempContent,
-                            state.ndmfUseTemporaryOutputFolder, GUILayout.Width(220));
+                        var enabledContent = new GUIContent(localizationService.Get(L10nKey.NdmfEnabled),
+                            localizationService.Get(L10nKey.NdmfEnabledTooltip));
+                        state.ndmfEnabled = EditorGUILayout.ToggleLeft(enabledContent, state.ndmfEnabled, GUILayout.Width(200));
+
+                        using (new EditorGUI.DisabledScope(!state.ndmfEnabled))
+                        {
+                            var tempContent = new GUIContent(localizationService.Get(L10nKey.NdmfUseTempOutput),
+                                localizationService.Get(L10nKey.NdmfUseTempOutputTooltip));
+                            state.ndmfUseTemporaryOutputFolder = EditorGUILayout.ToggleLeft(tempContent,
+                                state.ndmfUseTemporaryOutputFolder, GUILayout.Width(220));
+                        }
                     }
                 }
 
                 var summaryKey = state.ndmfEnabled ? L10nKey.NdmfSummaryEnabled : L10nKey.NdmfSummaryDisabled;
                 EditorGUILayout.HelpBox(localizationService.Get(summaryKey), MessageType.None);
             }
+        }
+
+        private static bool HasNdmfPackage()
+        {
+            if (ndmfAvailable.HasValue)
+            {
+                return ndmfAvailable.Value;
+            }
+
+            ndmfAvailable = Type.GetType("nadena.dev.ndmf.BuildContext, nadena.dev.ndmf") != null;
+            return ndmfAvailable.Value;
         }
 
         private void OnScan()

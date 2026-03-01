@@ -1,0 +1,27 @@
+{
+  "name": "K13A.MaterialMerger.Editor.Integrations",
+  "references": [
+    "K13A.MaterialMerger",
+    "K13A.MaterialMerger.Editor",
+    "nadena.dev.ndmf"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [
+    "K13A_HAS_NDMF"
+  ],
+  "versionDefines": [
+    {
+      "name": "nadena.dev.ndmf",
+      "expression": "*",
+      "define": "K13A_HAS_NDMF"
+    }
+  ],
+  "noEngineReferences": false
+}

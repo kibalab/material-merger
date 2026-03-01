@@ -1,8 +1,7 @@
 {
   "name": "K13A.MaterialMerger.Editor",
   "references": [
-    "K13A.MaterialMerger",
-    "nadena.dev.ndmf"
+    "K13A.MaterialMerger"
   ],
   "includePlatforms": [
     "Editor"
